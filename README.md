@@ -1,75 +1,99 @@
-### Byte Yapısı (Toplam 56 byte):
-- **0. Byte**: START Marker (0xAA, 1 byte)
-- **1-4. Byte**: Sıcaklık (Temperature, float, 4 byte)
-- **5-8. Byte**: Nem (Humidity, float, 4 byte)
-- **9-12. Byte**: Gaz Rezistans (Gas Resistance, float, 4 byte)
-- **13-16. Byte**: Hava Kalitesi (Air Quality, float, 4 byte)
-- **17-20. Byte**: NO2 (float, 4 byte)
-- **21-24. Byte**: CO (float, 4 byte)
-- **25-28. Byte**: TVOC (float, 4 byte)
-- **29-32. Byte**: eCO2 (float, 4 byte)
-- **33-36. Byte**: Yüzey Sıcaklık 1 (Surface Temp 1, float, 4 byte)
-- **37-40. Byte**: Yüzey Sıcaklık 2 (Surface Temp 2, float, 4 byte)
-- **41-44. Byte**: Basınç (Pressure, float, 4 byte)
-- **45-48. Byte**: Akım (Current, float, 4 byte)
-- **49. Byte**: Warning2 (1 byte, bit tabanlı anomali)
-- **50. Byte**: Warning1 (1 byte, bit tabanlı anomali)
-- **51-54. Byte**: Panel Health (float, 4 byte)
-- **55. Byte**: END Marker (0x55, 1 byte)
+# AICO Fire Detection System
 
-### Örnek Mesaj:
+Premium 3D Dashboard for real-time fire detection and monitoring system.
+
+## Project Structure
+
 ```
-0xAA0x422000000x42C800000x43FA00000x41A000000x3F8000000x400000000x404000000x408000000x422000000x422000000x42C800000x3F8000000x010x020x3F8000000x55
+firesensor/
+├── index.html              # Main dashboard entry point
+├── mqtt.js                 # MQTT connection handler
+├── requirements.txt        # Python dependencies
+├── src/
+│   ├── css/
+│   │   └── dashboard.css   # Dashboard styles
+│   └── js/
+│       └── dashboard.js    # Dashboard logic
+└── legacy/                 # Previous version files
+    ├── aicofiresystem.*    # Old dashboard
+    ├── db_config.php       # Database config
+    ├── get_data.php        # Data API
+    └── savedb.py           # Database saver
 ```
 
-Bu mesajda:
-- Sıcaklık: 40.0°C
-- Nem: 100.0%
-- Gaz Rezistans: 500.0 ohm
-- Hava Kalitesi: 20.0 AQI
-- NO2: 1.0 ppm
-- CO: 2.0 ppm
-- TVOC: 3.0 ppb
-- eCO2: 4.0 ppm
-- Yüzey Sıcaklık 1: 40.0°C
-- Yüzey Sıcaklık 2: 40.0°C
-- Basınç: 100.0 hPa
-- Akım: 1.0 A
-- Warning2: 0x01 (Bit 0: Yüzey Sıcaklık 1 anomalisi)
-- Warning1: 0x02 (Bit 1: Nem anomalisi)
-- Panel Health: 1.0%
+## Features
 
-## Parse İşlemi
+- Multi-device support (3 AICO panels)
+- Real-time sensor monitoring
+- Premium bezier curve charts
+- 3D electrical panel visualization
+- Energy flow visualization
+- Glass-morphism UI design
 
-### 1. MQTT.js'de Parse:
-- Mesaj string'i `split('0x')` ile parçalara ayrılır.
-- START (0xAA) ve END (0x55) marker'ları kontrol edilir.
-- Her hex değer float'a `hexToFloat()` ile dönüştürülür (IEEE 754).
-- Warning1 ve Warning2, `hexToByte()` ile byte'a çevrilir, binary'ye dönüştürülür.
+## Sensors
 
-### 2. Warning Bit Yapısı:
+| Sensor | Unit | Range |
+|--------|------|-------|
+| Temperature | °C | 0-80 |
+| Humidity | % | 0-100 |
+| CO | ppm | 0-100 |
+| Gas Resistance | ohm | 0-1000 |
+| Air Quality | AQI | 0-500 |
+| NO2 | ppm | 0-5 |
+| TVOC | ppb | 0-1000 |
+| eCO2 | ppm | 400-5000 |
+| Surface Temp | °C | 0-150 |
+| Pressure | hPa | 900-1100 |
+| Current | A | 0-100 |
 
-#### Warning1 (8 bit):
-- **Bit 0**: Sıcaklık anomalisi
-- **Bit 1**: Nem anomalisi
-- **Bit 2**: Gaz Rezistans anomalisi
-- **Bit 3**: Hava Kalitesi anomalisi
-- **Bit 4**: NO2 anomalisi
-- **Bit 5**: CO anomalisi
-- **Bit 6**: TVOC anomalisi
-- **Bit 7**: eCO2 anomalisi
+## MQTT Protocol
 
-#### Warning2 (8 bit):
-- **Bit 0**: Yüzey Sıcaklık 1 anomalisi
-- **Bit 1**: Yüzey Sıcaklık 2 anomalisi
-- **Bit 2**: Basınç anomalisi
-- **Bit 3**: Akım anomalisi
-- **Bit 4-7**: Kullanılmıyor (boş)
+### Byte Structure (56 bytes)
 
-### 3. Veritabanı Kaydetme (savedb.py):
-- Hex veriler float'a dönüştürülür.
-- Warning'lar binary string olarak kaydedilir.
-- Tüm veriler MySQL'e INSERT edilir.
+| Offset | Field | Type | Size |
+|--------|-------|------|------|
+| 0 | START | Marker | 1 |
+| 1-4 | Temperature | float | 4 |
+| 5-8 | Humidity | float | 4 |
+| 9-12 | Gas Resistance | float | 4 |
+| 13-16 | Air Quality | float | 4 |
+| 17-20 | NO2 | float | 4 |
+| 21-24 | CO | float | 4 |
+| 25-28 | TVOC | float | 4 |
+| 29-32 | eCO2 | float | 4 |
+| 33-36 | Surface Temp 1 | float | 4 |
+| 37-40 | Surface Temp 2 | float | 4 |
+| 41-44 | Pressure | float | 4 |
+| 45-48 | Current | float | 4 |
+| 49 | Warning2 | byte | 1 |
+| 50 | Warning1 | byte | 1 |
+| 51-54 | Panel Health | float | 4 |
+| 55 | END | Marker | 1 |
 
+### Warning Bits
 
+**Warning1:**
+- Bit 0: Temperature
+- Bit 1: Humidity
+- Bit 2: Gas Resistance
+- Bit 3: Air Quality
+- Bit 4: NO2
+- Bit 5: CO
+- Bit 6: TVOC
+- Bit 7: eCO2
 
+**Warning2:**
+- Bit 0: Surface Temp 1
+- Bit 1: Surface Temp 2
+- Bit 2: Pressure
+- Bit 3: Current
+
+## Usage
+
+1. Open `index.html` in browser
+2. Connect to MQTT broker
+3. Monitor sensors in real-time
+
+## License
+
+Proprietary - AICO Systems
