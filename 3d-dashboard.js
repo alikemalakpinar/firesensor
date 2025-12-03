@@ -1,173 +1,42 @@
 /**
  * AICO 3D Fire Detection Dashboard
- * Sanded Glass Effect Theme with MQTT Integration
+ * Full MQTT Integration with Real Sensor Data
  */
 
-class Dashboard3D {
+class AICO3DDashboard {
     constructor() {
+        // Sensor definitions matching your existing system
         this.sensors = {
-            temperature: {
-                id: 'temperature',
-                name: 'Temperature',
-                unit: '°C',
-                current: 25.0,
-                min: 22,
-                max: 28,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 35, critical: 45 },
-                color: '#ff7043'
-            },
-            humidity: {
-                id: 'humidity',
-                name: 'Humidity',
-                unit: '%',
-                current: 45.0,
-                min: 40,
-                max: 55,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 30, critical: 80 },
-                color: '#42a5f5'
-            },
-            'air-quality': {
-                id: 'air-quality',
-                name: 'Air Quality',
-                unit: 'AQI',
-                current: 35.0,
-                min: 28,
-                max: 52,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 50, critical: 100 },
-                color: '#26a69a'
-            },
-            gas: {
-                id: 'gas',
-                name: 'Gas Detection',
-                unit: 'ppm',
-                current: 65.0,
-                min: 45,
-                max: 89,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 300, critical: 500 },
-                color: '#ab47bc'
-            },
-            'surface-temp': {
-                id: 'surface-temp',
-                name: 'Surface Temp',
-                unit: '°C',
-                current: 28.0,
-                min: 25,
-                max: 35,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 60, critical: 80 },
-                color: '#8a2be2'
-            },
-            'surface-temp-2': {
-                id: 'surface-temp-2',
-                name: 'Surface Temp 2',
-                unit: '°C',
-                current: 27.5,
-                min: 24,
-                max: 34,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 60, critical: 80 },
-                color: '#8a2be2'
-            },
-            tvoc: {
-                id: 'tvoc',
-                name: 'TVOC',
-                unit: 'ppb',
-                current: 350,
-                min: 200,
-                max: 500,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 660, critical: 2200 },
-                color: '#34d399'
-            },
-            eco2: {
-                id: 'eco2',
-                name: 'eCO2',
-                unit: 'ppm',
-                current: 450,
-                min: 400,
-                max: 600,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 1000, critical: 2000 },
-                color: '#fbbf24'
-            },
-            no2: {
-                id: 'no2',
-                name: 'NO2',
-                unit: 'ppb',
-                current: 20,
-                min: 15,
-                max: 30,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 50, critical: 100 },
-                color: '#a855f7'
-            },
-            co: {
-                id: 'co',
-                name: 'CO',
-                unit: 'ppm',
-                current: 5,
-                min: 0,
-                max: 10,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 25, critical: 50 },
-                color: '#f87171'
-            },
-            pressure: {
-                id: 'pressure',
-                name: 'Pressure',
-                unit: 'hPa',
-                current: 1013,
-                min: 1010,
-                max: 1020,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 1000, critical: 1050 },
-                color: '#6c757d'
-            },
-            current: {
-                id: 'current',
-                name: 'Current',
-                unit: 'A',
-                current: 2.5,
-                min: 1.5,
-                max: 3.5,
-                history: [],
-                status: 'normal',
-                thresholds: { warning: 5, critical: 8 },
-                color: '#ffc107'
-            }
+            temperature: { id: 'temperature', name: 'Temperature', unit: '°C', icon: 'fa-thermometer-half', iconClass: 'temp', current: 0, history: [], status: 'normal', thresholds: { warning: 35, critical: 45 }, min: 15, max: 60 },
+            humidity: { id: 'humidity', name: 'Humidity', unit: '%', icon: 'fa-droplet', iconClass: 'humidity', current: 0, history: [], status: 'normal', thresholds: { warning: 70, critical: 85 }, min: 20, max: 85 },
+            'air-quality': { id: 'air-quality', name: 'Air Quality', unit: 'AQI', icon: 'fa-smog', iconClass: 'air', current: 0, history: [], status: 'normal', thresholds: { warning: 50, critical: 100 }, min: 0, max: 200 },
+            gas: { id: 'gas', name: 'Gas Resistance', unit: 'Ω', icon: 'fa-wind', iconClass: 'gas', current: 0, history: [], status: 'normal', thresholds: { warning: 300, critical: 500 }, min: 50, max: 800 },
+            'surface-temp': { id: 'surface-temp', name: 'Surface Temp', unit: '°C', icon: 'fa-temperature-high', iconClass: 'surface', current: 0, history: [], status: 'normal', thresholds: { warning: 60, critical: 80 }, min: 18, max: 90 },
+            'surface-temp-2': { id: 'surface-temp-2', name: 'Surface Temp 2', unit: '°C', icon: 'fa-temperature-high', iconClass: 'surface', current: 0, history: [], status: 'normal', thresholds: { warning: 60, critical: 80 }, min: 18, max: 90 },
+            tvoc: { id: 'tvoc', name: 'TVOC', unit: 'ppb', icon: 'fa-atom', iconClass: 'tvoc', current: 0, history: [], status: 'normal', thresholds: { warning: 660, critical: 2200 }, min: 0, max: 2000 },
+            eco2: { id: 'eco2', name: 'eCO2', unit: 'ppm', icon: 'fa-leaf', iconClass: 'eco2', current: 0, history: [], status: 'normal', thresholds: { warning: 1000, critical: 2000 }, min: 400, max: 5000 },
+            no2: { id: 'no2', name: 'NO2', unit: 'ppb', icon: 'fa-cloud', iconClass: 'no2', current: 0, history: [], status: 'normal', thresholds: { warning: 50, critical: 100 }, min: 0, max: 200 },
+            co: { id: 'co', name: 'Carbon Monoxide', unit: 'ppm', icon: 'fa-skull-crossbones', iconClass: 'co', current: 0, history: [], status: 'normal', thresholds: { warning: 25, critical: 50 }, min: 0, max: 100 },
+            pressure: { id: 'pressure', name: 'Pressure', unit: 'hPa', icon: 'fa-gauge-high', iconClass: 'pressure', current: 0, history: [], status: 'normal', thresholds: { warning: 1050, critical: 1080 }, min: 900, max: 1100 },
+            current: { id: 'current', name: 'Current', unit: 'A', icon: 'fa-bolt', iconClass: 'current', current: 0, history: [], status: 'normal', thresholds: { warning: 5, critical: 8 }, min: 0, max: 10 }
         };
 
-        this.systemState = {
-            isProtectionActive: true,
-            systemHealth: 87,
-            activeSensors: 12,
-            totalSensors: 14,
+        this.state = {
+            currentPage: 'dashboard',
+            mqttConnected: false,
+            boardHealth: 0,
             alerts: [],
-            weeklyActivity: []
+            lastUpdate: null,
+            gridVisible: true
         };
 
-        this.aiTips = [
-            "All sensors operating within normal parameters. No fire risk detected.",
-            "Humidity levels slightly elevated. Monitor ventilation systems.",
-            "Temperature stable across all zones. Fire suppression systems ready.",
-            "Air quality excellent. HVAC systems functioning optimally.",
-            "All detection circuits tested and operational.",
-            "Periodic sensor calibration recommended within 30 days."
+        this.aiMessages = [
+            "Tüm sensörler normal parametrelerde çalışıyor. Yangın riski tespit edilmedi.",
+            "Panel sıcaklığı stabil. Soğutma sistemi verimli çalışıyor.",
+            "Elektrik akımı normal seviyelerde. Aşırı yük tespit edilmedi.",
+            "Hava kalitesi iyi. Duman veya gaz sızıntısı yok.",
+            "Nem seviyesi kabul edilebilir aralıkta.",
+            "Tüm devreler aktif ve çalışır durumda."
         ];
 
         this.init();
@@ -175,151 +44,192 @@ class Dashboard3D {
 
     init() {
         this.setupEventListeners();
-        this.generateWeeklyActivity();
-        this.renderDotChart();
-        this.renderMiniCharts();
-        this.updateSystemStats();
-        this.startAnimations();
-        this.rotateTips();
-
-        // Connect to existing MQTT system if available
-        if (window.mqttClient) {
-            this.integrateWithMQTT();
-        }
+        this.startClock();
+        this.renderActivityChart();
+        this.renderAllSensorsPage();
+        this.connectMQTT();
+        this.startAIRotation();
 
         console.log('AICO 3D Dashboard initialized');
     }
 
     setupEventListeners() {
-        // Protection toggle
-        const protectionToggle = document.getElementById('protectionToggle');
-        if (protectionToggle) {
-            protectionToggle.addEventListener('change', (e) => {
-                this.systemState.isProtectionActive = e.target.checked;
-                this.updateProtectionStatus();
-            });
-        }
-
-        // More details button
-        const moreDetailsBtn = document.getElementById('moreDetailsBtn');
-        if (moreDetailsBtn) {
-            moreDetailsBtn.addEventListener('click', () => this.showSensorsModal());
-        }
-
-        // Modal close
-        const closeModal = document.getElementById('closeModal');
-        if (closeModal) {
-            closeModal.addEventListener('click', () => this.hideSensorsModal());
-        }
-
-        // Modal backdrop click
-        const modalBackdrop = document.querySelector('.modal-backdrop');
-        if (modalBackdrop) {
-            modalBackdrop.addEventListener('click', () => this.hideSensorsModal());
-        }
-
-        // Location tabs
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                this.changeLocation(e.target.dataset.location);
+        // Navigation menu
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = e.currentTarget.dataset.page;
+                this.switchPage(page);
             });
         });
-
-        // Week navigation
-        const prevWeek = document.getElementById('prevWeek');
-        const nextWeek = document.getElementById('nextWeek');
-        if (prevWeek) prevWeek.addEventListener('click', () => this.navigateWeek(-1));
-        if (nextWeek) nextWeek.addEventListener('click', () => this.navigateWeek(1));
 
         // Sensor card clicks
-        document.querySelectorAll('.sensor-card').forEach(card => {
+        document.querySelectorAll('.sensor-metric, .sensor-full-card').forEach(card => {
             card.addEventListener('click', () => {
                 const sensorId = card.dataset.sensor;
-                this.showSensorDetail(sensorId);
+                if (sensorId) this.showSensorModal(sensorId);
             });
         });
 
-        // Keyboard shortcuts
+        // Panel sensor clicks
+        document.querySelectorAll('.panel-sensor').forEach(sensor => {
+            sensor.addEventListener('click', () => {
+                const sensorId = sensor.dataset.sensor;
+                if (sensorId) this.showSensorModal(sensorId);
+            });
+        });
+
+        // Modal close
+        document.getElementById('closeDetailModal')?.addEventListener('click', () => this.hideModal());
+        document.querySelector('.modal-backdrop')?.addEventListener('click', () => this.hideModal());
+
+        // Scene controls
+        document.getElementById('resetView')?.addEventListener('click', () => this.resetPanelView());
+        document.getElementById('toggleGrid')?.addEventListener('click', () => this.toggleGrid());
+
+        // Activity navigation
+        document.getElementById('prevWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
+        document.getElementById('nextWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
+
+        // Alert filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.filterAlerts(e.target.dataset.filter);
+            });
+        });
+
+        document.getElementById('clearAlerts')?.addEventListener('click', () => this.clearAlerts());
+
+        // Analytics selects
+        document.getElementById('analyticsSensorSelect')?.addEventListener('change', () => this.updateAnalyticsChart());
+        document.getElementById('analyticsTimeRange')?.addEventListener('change', () => this.updateAnalyticsChart());
+
+        // Keyboard
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.hideSensorsModal();
-            }
+            if (e.key === 'Escape') this.hideModal();
         });
+    }
 
-        // 3D room interaction
-        const room3d = document.querySelector('.room-3d');
-        if (room3d) {
-            room3d.addEventListener('mousemove', (e) => {
-                const rect = room3d.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width - 0.5;
-                const y = (e.clientY - rect.top) / rect.height - 0.5;
+    connectMQTT() {
+        // Check if mqtt.js created a client
+        if (window.mqttClient) {
+            // Hook into existing MQTT client
+            const originalUpdate = window.mqttClient.updateDashboardSensors;
+            window.mqttClient.updateDashboardSensors = (data) => {
+                if (originalUpdate) originalUpdate.call(window.mqttClient, data);
+                this.handleMQTTData(data);
+            };
 
-                room3d.style.transform = `rotateX(${60 + y * 10}deg) rotateZ(${-45 + x * 10}deg)`;
+            // Check connection status
+            if (window.mqttClient.client && window.mqttClient.client.isConnected()) {
+                this.setConnectionStatus(true);
+            }
+        } else {
+            // Create our own MQTT connection
+            this.initOwnMQTT();
+        }
+    }
+
+    initOwnMQTT() {
+        try {
+            const clientId = 'aico3d_' + Math.random().toString(16).substr(2, 8);
+            const client = new Paho.MQTT.Client('213.142.151.191', 9001, clientId);
+
+            client.onConnectionLost = (responseObject) => {
+                console.log('MQTT Connection lost:', responseObject.errorMessage);
+                this.setConnectionStatus(false);
+                setTimeout(() => this.initOwnMQTT(), 5000);
+            };
+
+            client.onMessageArrived = (message) => {
+                this.parseMQTTMessage(message.payloadString);
+            };
+
+            client.connect({
+                onSuccess: () => {
+                    console.log('MQTT Connected');
+                    this.setConnectionStatus(true);
+                    client.subscribe('aicofire');
+                },
+                onFailure: (err) => {
+                    console.log('MQTT Connection failed:', err);
+                    this.setConnectionStatus(false);
+                    setTimeout(() => this.initOwnMQTT(), 5000);
+                }
             });
 
-            room3d.addEventListener('mouseleave', () => {
-                room3d.style.transform = 'rotateX(60deg) rotateZ(-45deg)';
-            });
+            this.mqttClient = client;
+        } catch (e) {
+            console.error('MQTT Error:', e);
+            this.setConnectionStatus(false);
+        }
+    }
+
+    parseMQTTMessage(payload) {
+        try {
+            // Format: A;temp;humidity;gas;air-quality;no2;co;tvoc;eco2;surface-temp1;surface-temp2;pressure;current;warning2;warning1;panelHealth;B
+            if (!payload.startsWith('A;') || !payload.endsWith(';B')) return;
+
+            const parts = payload.slice(2, -2).split(';');
+            if (parts.length < 15) return;
+
+            const data = {
+                temperature: parseFloat(parts[0]) || 0,
+                humidity: parseFloat(parts[1]) || 0,
+                gas: parseFloat(parts[2]) || 0,
+                'air-quality': parseFloat(parts[3]) || 0,
+                no2: parseFloat(parts[4]) || 0,
+                co: parseFloat(parts[5]) || 0,
+                tvoc: parseFloat(parts[6]) || 0,
+                eco2: parseFloat(parts[7]) || 0,
+                'surface-temp': parseFloat(parts[8]) || 0,
+                'surface-temp-2': parseFloat(parts[9]) || 0,
+                pressure: parseFloat(parts[10]) || 0,
+                current: parseFloat(parts[11]) || 0,
+                warning2: parts[12] || '0',
+                warning1: parts[13] || '0',
+                panelHealth: parseFloat(parts[14]) || 0
+            };
+
+            this.handleMQTTData(data);
+        } catch (e) {
+            console.error('Parse error:', e);
+        }
+    }
+
+    handleMQTTData(data) {
+        this.state.lastUpdate = new Date();
+
+        // Update board health
+        if (data.panelHealth !== undefined) {
+            this.state.boardHealth = data.panelHealth;
+            this.updateBoardHealth();
         }
 
-        // Sensor points in 3D room
-        document.querySelectorAll('.sensor-point').forEach(point => {
-            point.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const sensorId = point.dataset.sensor;
-                this.highlightSensor(sensorId);
-            });
-        });
-    }
-
-    integrateWithMQTT() {
-        // Override the MQTT client's update function to also update this dashboard
-        const originalUpdate = window.mqttClient.updateDashboardSensors;
-
-        window.mqttClient.updateDashboardSensors = (sensorData) => {
-            // Call original function if it exists
-            if (originalUpdate) {
-                originalUpdate.call(window.mqttClient, sensorData);
-            }
-
-            // Update 3D dashboard
-            this.updateFromMQTT(sensorData);
-        };
-    }
-
-    updateFromMQTT(sensorData) {
-        Object.keys(sensorData).forEach(sensorId => {
-            if (this.sensors[sensorId]) {
-                const value = sensorData[sensorId];
-                this.updateSensorValue(sensorId, value);
+        // Update each sensor
+        Object.keys(this.sensors).forEach(sensorId => {
+            if (data[sensorId] !== undefined) {
+                this.updateSensor(sensorId, data[sensorId]);
             }
         });
 
-        this.updateSystemStats();
-        this.checkForAlerts();
+        // Update system status
+        this.updateSystemStatus();
+        this.updatePanelDisplay();
     }
 
-    updateSensorValue(sensorId, value) {
+    updateSensor(sensorId, value) {
         const sensor = this.sensors[sensorId];
         if (!sensor) return;
 
-        // Update history
-        sensor.history.push(value);
-        if (sensor.history.length > 50) {
-            sensor.history.shift();
-        }
-
         sensor.current = value;
 
-        // Calculate min/max from recent history
-        if (sensor.history.length > 0) {
-            sensor.min = Math.min(...sensor.history.slice(-20));
-            sensor.max = Math.max(...sensor.history.slice(-20));
-        }
+        // Add to history
+        sensor.history.push({ value, time: new Date() });
+        if (sensor.history.length > 100) sensor.history.shift();
 
-        // Update status
+        // Calculate status
         if (value >= sensor.thresholds.critical) {
             sensor.status = 'critical';
         } else if (value >= sensor.thresholds.warning) {
@@ -328,201 +238,54 @@ class Dashboard3D {
             sensor.status = 'normal';
         }
 
-        // Update UI elements
+        // Update UI
         this.updateSensorUI(sensorId);
+        this.updateSensorSparkline(sensorId);
+
+        // Check for alerts
+        if (sensor.status !== 'normal') {
+            this.addAlert(sensor);
+        }
     }
 
     updateSensorUI(sensorId) {
         const sensor = this.sensors[sensorId];
 
-        // Update main display cards
-        if (sensorId === 'temperature') {
-            this.updateElement('tempMin', Math.round(sensor.min));
-            this.updateElement('tempMax', Math.round(sensor.max));
-        } else if (sensorId === 'gas') {
-            this.updateElement('gasMin', Math.round(sensor.min));
-            this.updateElement('gasMax', Math.round(sensor.max));
-        } else if (sensorId === 'air-quality') {
-            this.updateElement('airMin', Math.round(sensor.min));
-            this.updateElement('airMax', Math.round(sensor.max));
+        // Update value display
+        const valueEl = document.getElementById(`${sensorId}-card-value`);
+        if (valueEl) valueEl.textContent = sensor.current.toFixed(1);
+
+        // Update status badge
+        const statusEl = document.getElementById(`${sensorId}-card-status`);
+        if (statusEl) {
+            statusEl.innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
         }
 
-        // Update 3D room sensor points
-        const sensorPoint = document.querySelector(`.sensor-point[data-sensor="${sensorId}"]`);
-        if (sensorPoint) {
-            const dot = sensorPoint.querySelector('.sensor-dot');
-            const pulse = sensorPoint.querySelector('.sensor-pulse');
-
-            dot.style.background = this.getStatusColor(sensor.status);
-            dot.style.boxShadow = `0 0 15px ${this.getStatusColor(sensor.status)}`;
-            pulse.style.borderColor = this.getStatusColor(sensor.status);
+        // Update min/max
+        if (sensor.history.length > 0) {
+            const values = sensor.history.map(h => h.value);
+            const minEl = document.getElementById(`${sensorId}-min`);
+            const maxEl = document.getElementById(`${sensorId}-max`);
+            if (minEl) minEl.textContent = Math.min(...values).toFixed(1);
+            if (maxEl) maxEl.textContent = Math.max(...values).toFixed(1);
         }
 
-        // Update mini chart
-        this.renderMiniChart(sensorId);
-    }
+        // Update panel sensor
+        const panelLabel = document.getElementById(`panel-${sensorId}`);
+        if (panelLabel) panelLabel.textContent = sensor.current.toFixed(1);
 
-    updateElement(id, value) {
-        const el = document.getElementById(id);
-        if (el) {
-            el.textContent = value;
+        const panelSensor = document.querySelector(`.panel-sensor[data-sensor="${sensorId}"]`);
+        if (panelSensor) {
+            panelSensor.dataset.status = sensor.status;
         }
     }
 
-    getStatusColor(status) {
-        const colors = {
-            normal: '#7cb342',
-            warning: '#ffb300',
-            critical: '#ef5350'
-        };
-        return colors[status] || colors.normal;
-    }
-
-    updateSystemStats() {
-        // Calculate system health based on sensor statuses
-        let healthScore = 100;
-        let criticalCount = 0;
-        let warningCount = 0;
-
-        Object.values(this.sensors).forEach(sensor => {
-            if (sensor.status === 'critical') {
-                healthScore -= 15;
-                criticalCount++;
-            } else if (sensor.status === 'warning') {
-                healthScore -= 5;
-                warningCount++;
-            }
-        });
-
-        this.systemState.systemHealth = Math.max(0, healthScore);
-        this.systemState.alerts = [];
-
-        // Add alerts
-        Object.values(this.sensors).forEach(sensor => {
-            if (sensor.status === 'critical') {
-                this.systemState.alerts.push({
-                    type: 'critical',
-                    sensor: sensor.name,
-                    message: `${sensor.name} at critical level: ${sensor.current}${sensor.unit}`,
-                    time: new Date()
-                });
-            } else if (sensor.status === 'warning') {
-                this.systemState.alerts.push({
-                    type: 'warning',
-                    sensor: sensor.name,
-                    message: `${sensor.name} above warning threshold: ${sensor.current}${sensor.unit}`,
-                    time: new Date()
-                });
-            }
-        });
-
-        // Update UI
-        this.updateElement('systemHealthValue', `${this.systemState.systemHealth}%`);
-        this.updateElement('activeSensors', this.systemState.activeSensors);
-        this.updateElement('totalSensors', this.systemState.totalSensors);
-        this.updateElement('alertCount', this.systemState.alerts.length);
-
-        // Update health ring
-        const ring = document.getElementById('healthRing');
-        if (ring) {
-            const circumference = 2 * Math.PI * 45;
-            const offset = circumference - (this.systemState.systemHealth / 100) * circumference;
-            ring.style.strokeDashoffset = offset;
-
-            // Change color based on health
-            if (this.systemState.systemHealth < 50) {
-                ring.style.stroke = '#ef5350';
-            } else if (this.systemState.systemHealth < 75) {
-                ring.style.stroke = '#ffb300';
-            } else {
-                ring.style.stroke = '#7cb342';
-            }
-        }
-
-        // Update alerts panel
-        this.renderAlerts();
-    }
-
-    renderAlerts() {
-        const alertsList = document.getElementById('alertsList');
-        const alertsPanel = document.getElementById('alertsPanel');
-
-        if (!alertsList || !alertsPanel) return;
-
-        if (this.systemState.alerts.length > 0) {
-            alertsPanel.classList.add('show');
-
-            alertsList.innerHTML = this.systemState.alerts.map(alert => `
-                <div class="alert-item ${alert.type}">
-                    <i class="fas fa-exclamation-triangle alert-icon"></i>
-                    <div class="alert-content">
-                        <div class="alert-title">${alert.sensor}</div>
-                        <div class="alert-message">${alert.message}</div>
-                        <div class="alert-time">${this.formatTime(alert.time)}</div>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            alertsPanel.classList.remove('show');
-        }
-    }
-
-    formatTime(date) {
-        return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    generateWeeklyActivity() {
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        this.systemState.weeklyActivity = days.map(day => ({
-            day,
-            data: Array(24).fill(null).map(() => {
-                const rand = Math.random();
-                if (rand < 0.85) return 'normal';
-                if (rand < 0.95) return 'warning';
-                return 'critical';
-            })
-        }));
-    }
-
-    renderDotChart() {
-        const dotChart = document.getElementById('dotChart');
-        if (!dotChart) return;
-
-        dotChart.innerHTML = this.systemState.weeklyActivity.map(dayData => `
-            <div class="day-column">
-                <span class="day-label">${dayData.day}</span>
-                <div class="dot-grid">
-                    ${dayData.data.map(status => `
-                        <div class="activity-dot ${status}"></div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    renderMiniCharts() {
-        ['temperature', 'gas', 'air-quality'].forEach(sensorId => {
-            this.renderMiniChart(sensorId);
-        });
-    }
-
-    renderMiniChart(sensorId) {
-        const chartId = {
-            'temperature': 'tempMiniChart',
-            'gas': 'gasMiniChart',
-            'air-quality': 'airMiniChart'
-        }[sensorId];
-
-        const container = document.getElementById(chartId);
-        if (!container) return;
-
+    updateSensorSparkline(sensorId) {
         const sensor = this.sensors[sensorId];
-        const data = sensor.history.length > 0 ? sensor.history : this.generateFakeHistory(20);
+        const container = document.getElementById(`${sensorId}-sparkline`);
+        if (!container || sensor.history.length < 2) return;
 
-        // Create SVG mini chart
+        const data = sensor.history.slice(-30).map(h => h.value);
         const width = container.offsetWidth || 200;
         const height = container.offsetHeight || 40;
 
@@ -530,230 +293,601 @@ class Dashboard3D {
         const max = Math.max(...data);
         const range = max - min || 1;
 
-        const points = data.map((value, i) => {
+        const points = data.map((v, i) => {
             const x = (i / (data.length - 1)) * width;
-            const y = height - ((value - min) / range) * (height - 4) - 2;
+            const y = height - ((v - min) / range) * (height - 4) - 2;
             return `${x},${y}`;
         }).join(' ');
 
-        const fillPoints = `0,${height} ${points} ${width},${height}`;
+        const color = this.getSensorColor(sensorId);
 
         container.innerHTML = `
             <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="grad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:${sensor.color};stop-opacity:0.4"/>
-                        <stop offset="100%" style="stop-color:${sensor.color};stop-opacity:0"/>
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.5"/>
+                        <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
                     </linearGradient>
                 </defs>
-                <polygon points="${fillPoints}" fill="url(#grad-${sensorId})"/>
-                <polyline points="${points}" fill="none" stroke="${sensor.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polygon points="0,${height} ${points} ${width},${height}" fill="url(#grad-${sensorId})"/>
+                <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
             </svg>
         `;
     }
 
-    generateFakeHistory(count) {
-        const history = [];
-        let value = 50;
-        for (let i = 0; i < count; i++) {
-            value += (Math.random() - 0.5) * 10;
-            value = Math.max(20, Math.min(80, value));
-            history.push(value);
-        }
-        return history;
+    getSensorColor(sensorId) {
+        const colors = {
+            temperature: '#ff6b35',
+            humidity: '#00d4ff',
+            'air-quality': '#6366f1',
+            gas: '#ffc107',
+            'surface-temp': '#8a2be2',
+            'surface-temp-2': '#ff1493',
+            tvoc: '#00ff88',
+            eco2: '#ffd700',
+            no2: '#a855f7',
+            co: '#ff3b5c',
+            pressure: '#6c757d',
+            current: '#ffff00'
+        };
+        return colors[sensorId] || '#00d4ff';
     }
 
-    showSensorsModal() {
-        const modal = document.getElementById('sensorsModal');
+    updateSystemStatus() {
+        let normalCount = 0, warningCount = 0, criticalCount = 0;
+
+        Object.values(this.sensors).forEach(sensor => {
+            if (sensor.status === 'critical') criticalCount++;
+            else if (sensor.status === 'warning') warningCount++;
+            else normalCount++;
+        });
+
+        // Update counts
+        document.getElementById('normalSensorCount').textContent = normalCount;
+        document.getElementById('warningSensorCount').textContent = warningCount;
+        document.getElementById('criticalSensorCount').textContent = criticalCount;
+
+        document.getElementById('onlineSensors').textContent = Object.keys(this.sensors).length;
+        document.getElementById('warningCount').textContent = warningCount;
+        document.getElementById('criticalCount').textContent = criticalCount;
+
+        // Calculate health percentage
+        const total = Object.keys(this.sensors).length;
+        const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
+
+        document.getElementById('healthPercent').textContent = healthPercent;
+
+        // Update ring
+        const ring = document.getElementById('healthRingProgress');
+        if (ring) {
+            const circumference = 2 * Math.PI * 52;
+            const offset = circumference - (healthPercent / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+
+            if (criticalCount > 0) {
+                ring.style.stroke = '#ff3b5c';
+            } else if (warningCount > 0) {
+                ring.style.stroke = '#ff6b35';
+            } else {
+                ring.style.stroke = '#00ff88';
+            }
+        }
+
+        // Update status indicator
+        const indicator = document.getElementById('systemStatusIndicator');
+        if (indicator) {
+            if (criticalCount > 0) {
+                indicator.innerHTML = '<span class="status-dot" style="background:#ff3b5c"></span><span style="color:#ff3b5c">Critical</span>';
+            } else if (warningCount > 0) {
+                indicator.innerHTML = '<span class="status-dot" style="background:#ff6b35"></span><span style="color:#ff6b35">Warning</span>';
+            } else {
+                indicator.innerHTML = '<span class="status-dot active"></span><span>Active</span>';
+            }
+        }
+
+        // Update LEDs
+        document.getElementById('ledWarning')?.classList.toggle('active', warningCount > 0);
+        document.getElementById('ledCritical')?.classList.toggle('active', criticalCount > 0);
+    }
+
+    updateBoardHealth() {
+        const display = document.getElementById('boardHealthDisplay');
+        if (display) {
+            display.textContent = this.state.boardHealth.toFixed(2) + '%';
+        }
+    }
+
+    updatePanelDisplay() {
+        const currentSensor = this.sensors.current;
+        const display = document.getElementById('panelCurrentDisplay');
+        if (display) {
+            display.textContent = currentSensor.current.toFixed(1);
+        }
+    }
+
+    setConnectionStatus(connected) {
+        this.state.mqttConnected = connected;
+        const statusEl = document.getElementById('connectionStatus');
+        if (statusEl) {
+            statusEl.classList.toggle('connected', connected);
+            statusEl.querySelector('span').textContent = connected ? 'MQTT Connected' : 'MQTT Disconnected';
+        }
+    }
+
+    // Page Navigation
+    switchPage(page) {
+        this.state.currentPage = page;
+
+        // Update menu
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+
+        // Update pages
+        document.querySelectorAll('.page').forEach(p => {
+            p.classList.toggle('active', p.id === `page-${page}`);
+        });
+
+        // Update title
+        const titles = {
+            dashboard: 'Dashboard',
+            sensors: 'All Sensors',
+            analytics: 'Analytics',
+            alerts: 'Alerts'
+        };
+        document.getElementById('pageTitle').textContent = titles[page] || page;
+        document.getElementById('breadcrumbPage').textContent = titles[page] || page;
+
+        // Page-specific updates
+        if (page === 'analytics') {
+            this.updateAnalyticsChart();
+            this.renderGauges();
+        } else if (page === 'alerts') {
+            this.renderAlertsList();
+        }
+    }
+
+    // All Sensors Page
+    renderAllSensorsPage() {
         const grid = document.getElementById('allSensorsGrid');
+        if (!grid) return;
 
-        if (!modal || !grid) return;
-
-        // Generate all sensor cards
         grid.innerHTML = Object.values(this.sensors).map(sensor => `
-            <div class="stat-card sanded-glass sensor-card" data-sensor="${sensor.id}">
-                <div class="sensor-card-header">
-                    <div class="sensor-icon" style="background: linear-gradient(135deg, ${sensor.color}, ${this.darkenColor(sensor.color, 20)})">
-                        <i class="fas ${this.getSensorIcon(sensor.id)}"></i>
+            <div class="sensor-full-card glass-card" data-sensor="${sensor.id}">
+                <div class="sensor-header">
+                    <div class="sensor-icon ${sensor.iconClass}">
+                        <i class="fas ${sensor.icon}"></i>
                     </div>
-                    <div class="stat-label">${sensor.name}</div>
+                    <div class="sensor-info">
+                        <span class="sensor-name">${sensor.name}</span>
+                        <span class="sensor-type">${sensor.id}</span>
+                    </div>
+                    <div class="sensor-status">
+                        <span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>
+                    </div>
                 </div>
-                <div class="stat-value-range">
-                    <span class="value-main">${sensor.current.toFixed(1)}</span>
-                    <span class="value-secondary">${sensor.unit}</span>
+                <div class="sensor-value-row">
+                    <span class="big-value">${sensor.current.toFixed(1)}</span>
+                    <span class="value-unit">${sensor.unit}</span>
                 </div>
-                <div class="sensor-status-badge ${sensor.status}">${sensor.status.toUpperCase()}</div>
+                <div class="mini-sparkline" id="${sensor.id}-full-sparkline"></div>
             </div>
         `).join('');
+
+        // Add click handlers
+        grid.querySelectorAll('.sensor-full-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const sensorId = card.dataset.sensor;
+                if (sensorId) this.showSensorModal(sensorId);
+            });
+        });
+    }
+
+    // Activity Chart
+    renderActivityChart() {
+        const container = document.getElementById('activityChart');
+        if (!container) return;
+
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        container.innerHTML = days.map(day => {
+            const dots = Array(24).fill(null).map(() => {
+                const rand = Math.random();
+                let status = 'normal';
+                if (rand > 0.95) status = 'critical';
+                else if (rand > 0.85) status = 'warning';
+                else if (rand > 0.15) status = 'normal';
+                return `<div class="activity-dot ${status}"></div>`;
+            }).join('');
+
+            return `
+                <div class="day-column">
+                    <span class="day-label">${day}</span>
+                    <div class="dot-grid">${dots}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Analytics
+    updateAnalyticsChart() {
+        const canvas = document.getElementById('analyticsCanvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const sensorId = document.getElementById('analyticsSensorSelect')?.value || 'temperature';
+        const sensor = this.sensors[sensorId];
+        const count = parseInt(document.getElementById('analyticsTimeRange')?.value || '50');
+
+        const data = sensor.history.slice(-count).map(h => h.value);
+        if (data.length < 2) {
+            // Generate sample data if no history
+            for (let i = 0; i < count; i++) {
+                data.push(sensor.min + Math.random() * (sensor.max - sensor.min) * 0.5);
+            }
+        }
+
+        const width = canvas.parentElement.offsetWidth;
+        const height = canvas.parentElement.offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const padding = 40;
+        const chartWidth = width - padding * 2;
+        const chartHeight = height - padding * 2;
+
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+
+        // Clear
+        ctx.clearRect(0, 0, width, height);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5; i++) {
+            const y = padding + (i / 5) * chartHeight;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '11px Inter';
+            ctx.textAlign = 'right';
+            const val = max - (i / 5) * range;
+            ctx.fillText(val.toFixed(1), padding - 5, y + 4);
+        }
+
+        // Line
+        const color = this.getSensorColor(sensorId);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        data.forEach((v, i) => {
+            const x = padding + (i / (data.length - 1)) * chartWidth;
+            const y = padding + ((max - v) / range) * chartHeight;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Fill
+        const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+        gradient.addColorStop(0, color.replace(')', ',0.3)').replace('rgb', 'rgba'));
+        gradient.addColorStop(1, color.replace(')', ',0)').replace('rgb', 'rgba'));
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding);
+        data.forEach((v, i) => {
+            const x = padding + (i / (data.length - 1)) * chartWidth;
+            const y = padding + ((max - v) / range) * chartHeight;
+            ctx.lineTo(x, y);
+        });
+        ctx.lineTo(width - padding, height - padding);
+        ctx.closePath();
+        ctx.fill();
+
+        // Update stats
+        if (sensor.history.length > 0) {
+            const values = sensor.history.map(h => h.value);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+            if (sensorId === 'temperature') {
+                document.getElementById('avgTemp').textContent = avg.toFixed(1) + '°C';
+            } else if (sensorId === 'humidity') {
+                document.getElementById('avgHumidity').textContent = avg.toFixed(1) + '%';
+            } else if (sensorId === 'current') {
+                document.getElementById('avgCurrent').textContent = avg.toFixed(2) + 'A';
+            }
+        }
+
+        document.getElementById('totalAlerts').textContent = this.state.alerts.length;
+    }
+
+    renderGauges() {
+        this.renderGauge('tempGauge', this.sensors.temperature);
+        this.renderGauge('humidityGauge', this.sensors.humidity);
+        this.renderGauge('coGauge', this.sensors.co);
+        this.renderGauge('currentGauge', this.sensors.current);
+    }
+
+    renderGauge(canvasId, sensor) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 10;
+        const radius = 70;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Background arc
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 15;
+        ctx.stroke();
+
+        // Value arc
+        const range = sensor.max - sensor.min;
+        const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
+        const endAngle = Math.PI + normalized * Math.PI;
+
+        let color = '#00ff88';
+        if (sensor.status === 'warning') color = '#ff6b35';
+        else if (sensor.status === 'critical') color = '#ff3b5c';
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, Math.PI, endAngle, false);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 15;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Value text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(sensor.current.toFixed(1), centerX, centerY - 20);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '12px Inter';
+        ctx.fillText(sensor.unit, centerX, centerY);
+    }
+
+    // Alerts
+    addAlert(sensor) {
+        const alert = {
+            id: Date.now(),
+            type: sensor.status,
+            sensor: sensor.name,
+            sensorId: sensor.id,
+            value: sensor.current,
+            unit: sensor.unit,
+            message: `${sensor.name} ${sensor.status === 'critical' ? 'kritik seviyede' : 'uyarı seviyesinde'}: ${sensor.current.toFixed(1)}${sensor.unit}`,
+            time: new Date()
+        };
+
+        // Avoid duplicates
+        const recent = this.state.alerts.find(a =>
+            a.sensorId === alert.sensorId &&
+            Date.now() - a.time.getTime() < 30000
+        );
+        if (recent) return;
+
+        this.state.alerts.unshift(alert);
+        if (this.state.alerts.length > 50) this.state.alerts.pop();
+
+        // Update badge
+        document.getElementById('sidebarAlertCount').textContent = this.state.alerts.length;
+
+        // Show toast
+        this.showToast(alert);
+
+        // Update alerts page if visible
+        if (this.state.currentPage === 'alerts') {
+            this.renderAlertsList();
+        }
+    }
+
+    renderAlertsList(filter = 'all') {
+        const container = document.getElementById('alertsListFull');
+        if (!container) return;
+
+        let alerts = this.state.alerts;
+        if (filter !== 'all') {
+            alerts = alerts.filter(a => a.type === filter);
+        }
+
+        if (alerts.length === 0) {
+            container.innerHTML = `
+                <div class="no-alerts">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Şu anda alarm bulunmuyor</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert-item ${alert.type}">
+                <div class="alert-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="alert-content">
+                    <div class="alert-title">${alert.sensor}</div>
+                    <div class="alert-message">${alert.message}</div>
+                    <div class="alert-time">${this.formatTime(alert.time)}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    filterAlerts(filter) {
+        this.renderAlertsList(filter);
+    }
+
+    clearAlerts() {
+        this.state.alerts = [];
+        document.getElementById('sidebarAlertCount').textContent = '0';
+        this.renderAlertsList();
+    }
+
+    // Modal
+    showSensorModal(sensorId) {
+        const sensor = this.sensors[sensorId];
+        if (!sensor) return;
+
+        const modal = document.getElementById('sensorDetailModal');
+
+        document.getElementById('modalSensorIcon').innerHTML = `<i class="fas ${sensor.icon}"></i>`;
+        document.getElementById('modalSensorName').textContent = sensor.name;
+        document.getElementById('modalSensorType').textContent = sensor.id;
+        document.getElementById('modalSensorValue').textContent = sensor.current.toFixed(1);
+        document.getElementById('modalSensorUnit').textContent = sensor.unit;
+        document.getElementById('modalSensorStatus').innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
+        document.getElementById('modalWarningThreshold').textContent = sensor.thresholds.warning + sensor.unit;
+        document.getElementById('modalCriticalThreshold').textContent = sensor.thresholds.critical + sensor.unit;
+
+        // Render history chart
+        this.renderModalChart(sensor);
 
         modal.classList.add('show');
     }
 
-    hideSensorsModal() {
-        const modal = document.getElementById('sensorsModal');
-        if (modal) {
-            modal.classList.remove('show');
+    renderModalChart(sensor) {
+        const canvas = document.getElementById('modalHistoryChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = 200;
+
+        const data = sensor.history.map(h => h.value);
+        if (data.length < 2) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '14px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('Henüz yeterli veri yok', canvas.width / 2, 100);
+            return;
         }
-    }
 
-    getSensorIcon(sensorId) {
-        const icons = {
-            'temperature': 'fa-thermometer-half',
-            'humidity': 'fa-droplet',
-            'air-quality': 'fa-wind',
-            'gas': 'fa-smog',
-            'surface-temp': 'fa-temperature-high',
-            'surface-temp-2': 'fa-temperature-high',
-            'tvoc': 'fa-atom',
-            'eco2': 'fa-leaf',
-            'no2': 'fa-cloud',
-            'co': 'fa-skull-crossbones',
-            'pressure': 'fa-gauge-high',
-            'current': 'fa-bolt'
-        };
-        return icons[sensorId] || 'fa-sensor';
-    }
+        const padding = 30;
+        const width = canvas.width - padding * 2;
+        const height = canvas.height - padding * 2;
 
-    darkenColor(hex, percent) {
-        const num = parseInt(hex.replace('#', ''), 16);
-        const amt = Math.round(2.55 * percent);
-        const R = Math.max(0, (num >> 16) - amt);
-        const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
-        const B = Math.max(0, (num & 0x0000FF) - amt);
-        return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
-    }
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
 
-    highlightSensor(sensorId) {
-        // Highlight sensor point in 3D room
-        document.querySelectorAll('.sensor-point').forEach(point => {
-            point.classList.remove('highlighted');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw line
+        const color = this.getSensorColor(sensor.id);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        data.forEach((v, i) => {
+            const x = padding + (i / (data.length - 1)) * width;
+            const y = padding + ((max - v) / range) * height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
         });
-
-        const point = document.querySelector(`.sensor-point[data-sensor="${sensorId}"]`);
-        if (point) {
-            point.classList.add('highlighted');
-
-            // Also highlight corresponding card
-            document.querySelectorAll('.sensor-card').forEach(card => {
-                card.classList.remove('highlighted');
-                if (card.dataset.sensor === sensorId) {
-                    card.classList.add('highlighted');
-                }
-            });
-        }
+        ctx.stroke();
     }
 
-    showSensorDetail(sensorId) {
-        // If original dashboard has this function, use it
-        if (window.modernFireDashboard && typeof window.modernFireDashboard.showSensorDetail === 'function') {
-            window.modernFireDashboard.showSensorDetail(sensorId);
-        } else {
-            console.log(`Show detail for sensor: ${sensorId}`);
-            this.highlightSensor(sensorId);
-        }
+    hideModal() {
+        document.getElementById('sensorDetailModal')?.classList.remove('show');
     }
 
-    changeLocation(location) {
-        console.log(`Changing to location: ${location}`);
-        // Add location-specific logic here
+    // Toast
+    showToast(alert) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${alert.type}`;
+        toast.innerHTML = `
+            <i class="fas fa-exclamation-triangle toast-icon"></i>
+            <div class="toast-content">
+                <div class="toast-title">${alert.sensor}</div>
+                <div class="toast-message">${alert.message}</div>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideIn 0.3s ease-out reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
     }
 
-    navigateWeek(direction) {
-        // Regenerate activity data for demo
-        this.generateWeeklyActivity();
-        this.renderDotChart();
+    // Utilities
+    startClock() {
+        const update = () => {
+            const now = new Date();
+            document.getElementById('systemTime').textContent = now.toLocaleTimeString('tr-TR');
+        };
+        update();
+        setInterval(update, 1000);
     }
 
-    updateProtectionStatus() {
-        const status = this.systemState.isProtectionActive;
-        console.log(`Fire protection ${status ? 'activated' : 'deactivated'}`);
+    startAIRotation() {
+        let index = 0;
+        const update = () => {
+            const text = this.aiMessages[index];
+            const el = document.getElementById('aiAnalysisText');
+            const timeEl = document.getElementById('aiAnalysisTime');
 
-        // Update 3D room visual feedback
-        const room = document.querySelector('.room-3d');
-        if (room) {
-            if (status) {
-                room.classList.remove('protection-off');
-            } else {
-                room.classList.add('protection-off');
-            }
-        }
-    }
-
-    rotateTips() {
-        let tipIndex = 0;
-        const tipElement = document.getElementById('aiTipText');
-        const timeElement = document.getElementById('analysisTime');
-
-        setInterval(() => {
-            tipIndex = (tipIndex + 1) % this.aiTips.length;
-            if (tipElement) {
-                tipElement.style.opacity = '0';
+            if (el) {
+                el.style.opacity = '0';
                 setTimeout(() => {
-                    tipElement.textContent = this.aiTips[tipIndex];
-                    tipElement.style.opacity = '1';
+                    el.textContent = text;
+                    el.style.opacity = '1';
                 }, 300);
             }
-            if (timeElement) {
-                timeElement.textContent = `${Math.floor(Math.random() * 5) + 1} min`;
+            if (timeEl) {
+                timeEl.textContent = `${Math.floor(Math.random() * 5) + 1} dk önce`;
             }
-        }, 10000);
+
+            index = (index + 1) % this.aiMessages.length;
+        };
+
+        update();
+        setInterval(update, 15000);
     }
 
-    startAnimations() {
-        // Animate sensor values periodically for demo
-        setInterval(() => {
-            if (!window.mqttClient || !window.mqttClient.connected) {
-                // Only simulate if not receiving real MQTT data
-                this.simulateSensorUpdates();
-            }
-        }, 3000);
-    }
-
-    simulateSensorUpdates() {
-        Object.keys(this.sensors).forEach(sensorId => {
-            const sensor = this.sensors[sensorId];
-            const variation = (Math.random() - 0.5) * 5;
-            const newValue = Math.max(sensor.min, Math.min(sensor.max, sensor.current + variation));
-            this.updateSensorValue(sensorId, newValue);
-        });
-    }
-
-    checkForAlerts() {
-        // Check for critical conditions
-        Object.values(this.sensors).forEach(sensor => {
-            if (sensor.status === 'critical') {
-                this.triggerAlert(sensor);
-            }
-        });
-    }
-
-    triggerAlert(sensor) {
-        console.log(`ALERT: ${sensor.name} at critical level!`);
-
-        // Flash the 3D room red briefly
-        const room = document.querySelector('.room-floor');
-        if (room) {
-            room.style.boxShadow = '0 50px 100px rgba(239, 83, 80, 0.5), inset 0 0 50px rgba(239, 83, 80, 0.2)';
-            setTimeout(() => {
-                room.style.boxShadow = '';
-            }, 500);
+    resetPanelView() {
+        const cabinet = document.querySelector('.panel-cabinet');
+        if (cabinet) {
+            cabinet.style.transform = 'translate(-50%, -50%) rotateX(5deg) rotateY(-5deg)';
         }
     }
+
+    toggleGrid() {
+        const grid = document.getElementById('sceneGrid');
+        if (grid) {
+            grid.classList.toggle('hidden');
+            this.state.gridVisible = !this.state.gridVisible;
+        }
+    }
+
+    formatTime(date) {
+        return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    }
 }
 
-// Initialize dashboard when DOM is ready
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    window.dashboard3D = new Dashboard3D();
-
-    // Expose global API
-    window.AICO3D = {
-        dashboard: window.dashboard3D,
-        version: '1.0.0',
-        theme: 'sanded-glass'
-    };
+    window.aico3D = new AICO3DDashboard();
 });
-
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Dashboard3D;
-}

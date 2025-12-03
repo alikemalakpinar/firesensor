@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AICO - 3D Fire Detection Dashboard</title>
+    <title>AICO - 3D Fire Detection System</title>
     <link rel="stylesheet" href="3d-dashboard.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,284 +14,628 @@
 </head>
 <body>
     <div class="dashboard-3d">
-        <!-- Navigation -->
-        <nav class="nav-bar">
-            <div class="nav-left">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
                 <div class="logo">
                     <div class="logo-icon">
                         <i class="fas fa-fire-flame-curved"></i>
+                        <div class="logo-pulse"></div>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-title">AICO</span>
+                        <span class="logo-subtitle">Fire Detection</span>
                     </div>
                 </div>
-                <div class="nav-links">
-                    <a href="#" class="nav-link active">Dashboard</a>
-                    <a href="#" class="nav-link">Sensors</a>
-                    <a href="#" class="nav-link">Reports</a>
-                    <a href="#" class="nav-link">Settings</a>
-                </div>
             </div>
-            <div class="nav-right">
-                <div class="status-toggle">
-                    <span>Fire Protection</span>
-                    <label class="toggle">
-                        <input type="checkbox" checked id="protectionToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <button class="btn-details" id="moreDetailsBtn">
-                    <span>More details</span>
-                    <i class="fas fa-arrow-right"></i>
+
+            <div class="sidebar-menu">
+                <button class="menu-item active" data-page="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
                 </button>
+                <button class="menu-item" data-page="sensors">
+                    <i class="fas fa-microchip"></i>
+                    <span>All Sensors</span>
+                </button>
+                <button class="menu-item" data-page="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </button>
+                <button class="menu-item" data-page="alerts">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts</span>
+                    <span class="alert-badge" id="sidebarAlertCount">0</span>
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="connection-status" id="connectionStatus">
+                    <div class="status-dot"></div>
+                    <span>MQTT Disconnected</span>
+                </div>
+                <div class="system-time" id="systemTime">--:--:--</div>
             </div>
         </nav>
 
-        <!-- Location Tabs -->
-        <div class="location-tabs">
-            <button class="tab-btn" data-location="building">Building A</button>
-            <button class="tab-btn active" data-location="control-room">Control Room</button>
-            <button class="tab-btn" data-location="server-room">Server Room</button>
-        </div>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Left Stats Column -->
-            <aside class="stats-column left-column">
-                <!-- System Health Card -->
-                <div class="stat-card sanded-glass primary-stat">
-                    <div class="stat-label">System Health</div>
-                    <div class="stat-value-large" id="systemHealthValue">87%</div>
-                    <div class="health-ring">
-                        <svg viewBox="0 0 100 100">
-                            <circle class="ring-bg" cx="50" cy="50" r="45"/>
-                            <circle class="ring-progress" cx="50" cy="50" r="45" id="healthRing"/>
-                        </svg>
+        <!-- Main Content Area -->
+        <main class="main-area">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-left">
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                    <div class="breadcrumb">
+                        <span>AICO</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span id="breadcrumbPage">Dashboard</span>
                     </div>
                 </div>
-
-                <!-- Total Sensors Card -->
-                <div class="stat-card sanded-glass">
-                    <div class="stat-label">Active Sensors</div>
-                    <div class="stat-value-range">
-                        <span class="value-main" id="activeSensors">12</span>
-                        <span class="value-divider">/</span>
-                        <span class="value-secondary" id="totalSensors">14</span>
-                    </div>
-                    <div class="stat-unit">sensors online</div>
-                </div>
-
-                <!-- AI Analysis Tip Card -->
-                <div class="stat-card sanded-glass tip-card">
-                    <div class="tip-icon">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <p class="tip-text" id="aiTipText">All sensors operating within normal parameters. No fire risk detected.</p>
-                    <div class="tip-footer">
-                        <span class="analysis-label">AI Analysis</span>
-                        <span class="analysis-time" id="analysisTime">2 min</span>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center 3D Visualization -->
-            <div class="center-3d-container">
-                <div class="isometric-scene">
-                    <div class="room-3d">
-                        <!-- Room Base -->
-                        <div class="room-floor"></div>
-
-                        <!-- Room Walls -->
-                        <div class="room-wall wall-back"></div>
-                        <div class="room-wall wall-left"></div>
-
-                        <!-- Room Elements -->
-                        <div class="room-element desk">
-                            <div class="desk-top"></div>
-                            <div class="desk-leg leg-1"></div>
-                            <div class="desk-leg leg-2"></div>
+                <div class="top-right">
+                    <div class="board-health-display">
+                        <div class="health-icon">
+                            <i class="fas fa-heart"></i>
                         </div>
+                        <div class="health-info">
+                            <span class="health-label">Board Health</span>
+                            <span class="health-value" id="boardHealthDisplay">0.00%</span>
+                        </div>
+                    </div>
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <span class="stat-number" id="onlineSensors">0</span>
+                            <span class="stat-label">Online</span>
+                        </div>
+                        <div class="quick-stat warning">
+                            <span class="stat-number" id="warningCount">0</span>
+                            <span class="stat-label">Warning</span>
+                        </div>
+                        <div class="quick-stat critical">
+                            <span class="stat-number" id="criticalCount">0</span>
+                            <span class="stat-label">Critical</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
-                        <div class="room-element monitor">
-                            <div class="monitor-screen">
-                                <div class="screen-content">
-                                    <div class="screen-line"></div>
-                                    <div class="screen-line"></div>
-                                    <div class="screen-line"></div>
+            <!-- Page: Dashboard -->
+            <div class="page active" id="page-dashboard">
+                <div class="dashboard-grid">
+                    <!-- Left Column: Key Metrics -->
+                    <div class="metrics-column">
+                        <!-- System Health Card -->
+                        <div class="metric-card glass-card system-health-card">
+                            <div class="card-header">
+                                <span class="card-title">System Status</span>
+                                <div class="status-indicator" id="systemStatusIndicator">
+                                    <span class="status-dot active"></span>
+                                    <span>Active</span>
                                 </div>
                             </div>
-                            <div class="monitor-stand"></div>
+                            <div class="health-display">
+                                <div class="health-ring-container">
+                                    <svg class="health-ring" viewBox="0 0 120 120">
+                                        <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                                        <circle class="ring-progress" cx="60" cy="60" r="52" id="healthRingProgress"/>
+                                    </svg>
+                                    <div class="health-center">
+                                        <span class="health-percent" id="healthPercent">0</span>
+                                        <span class="health-symbol">%</span>
+                                    </div>
+                                </div>
+                                <div class="health-stats">
+                                    <div class="health-stat">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span id="normalSensorCount">0</span>
+                                        <label>Normal</label>
+                                    </div>
+                                    <div class="health-stat warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span id="warningSensorCount">0</span>
+                                        <label>Warning</label>
+                                    </div>
+                                    <div class="health-stat critical">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span id="criticalSensorCount">0</span>
+                                        <label>Critical</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="room-element chair">
-                            <div class="chair-seat"></div>
-                            <div class="chair-back"></div>
-                            <div class="chair-base"></div>
+                        <!-- Primary Sensors -->
+                        <div class="metric-card glass-card sensor-metric" data-sensor="temperature">
+                            <div class="sensor-header">
+                                <div class="sensor-icon temp">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Temperature</span>
+                                    <span class="sensor-type">Thermal Sensor</span>
+                                </div>
+                                <div class="sensor-status" id="temp-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="temp-card-value">0.0</span>
+                                <span class="value-unit">°C</span>
+                            </div>
+                            <div class="sensor-range">
+                                <span>Min: <strong id="temp-min">--</strong></span>
+                                <span>Max: <strong id="temp-max">--</strong></span>
+                            </div>
+                            <div class="mini-sparkline" id="temp-sparkline"></div>
                         </div>
 
-                        <!-- Fire Detection Sensors -->
-                        <div class="sensor-point sensor-ceiling" data-sensor="temperature">
-                            <div class="sensor-pulse"></div>
-                            <div class="sensor-dot"></div>
+                        <div class="metric-card glass-card sensor-metric" data-sensor="humidity">
+                            <div class="sensor-header">
+                                <div class="sensor-icon humidity">
+                                    <i class="fas fa-droplet"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Humidity</span>
+                                    <span class="sensor-type">Moisture Sensor</span>
+                                </div>
+                                <div class="sensor-status" id="humidity-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="humidity-card-value">0.0</span>
+                                <span class="value-unit">%</span>
+                            </div>
+                            <div class="sensor-range">
+                                <span>Min: <strong id="humidity-min">--</strong></span>
+                                <span>Max: <strong id="humidity-max">--</strong></span>
+                            </div>
+                            <div class="mini-sparkline" id="humidity-sparkline"></div>
                         </div>
 
-                        <div class="sensor-point sensor-wall" data-sensor="gas">
-                            <div class="sensor-pulse"></div>
-                            <div class="sensor-dot"></div>
+                        <div class="metric-card glass-card sensor-metric" data-sensor="co">
+                            <div class="sensor-header">
+                                <div class="sensor-icon co">
+                                    <i class="fas fa-skull-crossbones"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Carbon Monoxide</span>
+                                    <span class="sensor-type">CO Detector</span>
+                                </div>
+                                <div class="sensor-status" id="co-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="co-card-value">0.0</span>
+                                <span class="value-unit">ppm</span>
+                            </div>
+                            <div class="sensor-range">
+                                <span>Min: <strong id="co-min">--</strong></span>
+                                <span>Max: <strong id="co-max">--</strong></span>
+                            </div>
+                            <div class="mini-sparkline" id="co-sparkline"></div>
+                        </div>
+                    </div>
+
+                    <!-- Center: 3D Electrical Panel Scene -->
+                    <div class="scene-column">
+                        <div class="scene-container glass-card">
+                            <div class="scene-header">
+                                <span class="scene-title">Electrical Panel Monitoring</span>
+                                <div class="scene-controls">
+                                    <button class="scene-btn" id="resetView" title="Reset View">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button class="scene-btn" id="toggleGrid" title="Toggle Grid">
+                                        <i class="fas fa-border-all"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="electrical-panel-scene" id="panelScene">
+                                <!-- 3D Panel Structure -->
+                                <div class="panel-3d">
+                                    <!-- Panel Cabinet -->
+                                    <div class="panel-cabinet">
+                                        <div class="cabinet-front">
+                                            <!-- Panel Door -->
+                                            <div class="panel-door">
+                                                <div class="door-handle"></div>
+                                                <div class="door-window">
+                                                    <!-- Inside Panel View -->
+                                                    <div class="panel-interior">
+                                                        <!-- Circuit Breakers Row 1 -->
+                                                        <div class="breaker-row">
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker warning"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                        </div>
+                                                        <!-- Circuit Breakers Row 2 -->
+                                                        <div class="breaker-row">
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                            <div class="breaker active"></div>
+                                                        </div>
+                                                        <!-- Main Meter Display -->
+                                                        <div class="meter-display">
+                                                            <div class="meter-screen">
+                                                                <span class="meter-value" id="panelCurrentDisplay">0.0</span>
+                                                                <span class="meter-unit">A</span>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Status LEDs -->
+                                                        <div class="status-leds">
+                                                            <div class="led green active" title="Power"></div>
+                                                            <div class="led yellow" id="ledWarning" title="Warning"></div>
+                                                            <div class="led red" id="ledCritical" title="Critical"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="cabinet-side"></div>
+                                        <div class="cabinet-top"></div>
+                                    </div>
+
+                                    <!-- Sensor Positions on Panel -->
+                                    <div class="panel-sensor" data-sensor="temperature" style="--pos-x: 20%; --pos-y: 15%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">TEMP<br><span id="panel-temp">--</span>°C</div>
+                                    </div>
+
+                                    <div class="panel-sensor" data-sensor="humidity" style="--pos-x: 80%; --pos-y: 15%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">HUM<br><span id="panel-humidity">--</span>%</div>
+                                    </div>
+
+                                    <div class="panel-sensor" data-sensor="gas" style="--pos-x: 15%; --pos-y: 50%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">GAS<br><span id="panel-gas">--</span>Ω</div>
+                                    </div>
+
+                                    <div class="panel-sensor" data-sensor="surface-temp" style="--pos-x: 85%; --pos-y: 50%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">SURF<br><span id="panel-surface">--</span>°C</div>
+                                    </div>
+
+                                    <div class="panel-sensor" data-sensor="current" style="--pos-x: 50%; --pos-y: 85%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">CURR<br><span id="panel-current">--</span>A</div>
+                                    </div>
+
+                                    <div class="panel-sensor" data-sensor="co" style="--pos-x: 25%; --pos-y: 85%;">
+                                        <div class="sensor-pulse"></div>
+                                        <div class="sensor-dot"></div>
+                                        <div class="sensor-label">CO<br><span id="panel-co">--</span>ppm</div>
+                                    </div>
+
+                                    <!-- Grid Overlay -->
+                                    <div class="scene-grid" id="sceneGrid"></div>
+
+                                    <!-- Connection Lines -->
+                                    <svg class="connection-svg" viewBox="0 0 400 350">
+                                        <defs>
+                                            <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0"/>
+                                                <stop offset="50%" style="stop-color:#00d4ff;stop-opacity:0.6"/>
+                                                <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path class="data-line" d="M80,50 Q200,50 200,175" stroke="url(#lineGrad1)"/>
+                                        <path class="data-line" d="M320,50 Q200,50 200,175" stroke="url(#lineGrad1)"/>
+                                        <path class="data-line" d="M60,175 Q130,175 200,175" stroke="url(#lineGrad1)"/>
+                                        <path class="data-line" d="M340,175 Q270,175 200,175" stroke="url(#lineGrad1)"/>
+                                        <path class="data-line" d="M100,300 Q150,250 200,175" stroke="url(#lineGrad1)"/>
+                                        <path class="data-line" d="M200,300 L200,175" stroke="url(#lineGrad1)"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- AI Analysis -->
+                            <div class="ai-analysis">
+                                <div class="ai-icon">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <p class="ai-text" id="aiAnalysisText">Sistem başlatılıyor, sensör verileri bekleniyor...</p>
+                                <span class="ai-time" id="aiAnalysisTime">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: More Sensors -->
+                    <div class="sensors-column">
+                        <div class="metric-card glass-card sensor-metric" data-sensor="gas">
+                            <div class="sensor-header">
+                                <div class="sensor-icon gas">
+                                    <i class="fas fa-wind"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Gas Resistance</span>
+                                    <span class="sensor-type">Gas Sensor</span>
+                                </div>
+                                <div class="sensor-status" id="gas-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="gas-card-value">0.0</span>
+                                <span class="value-unit">Ω</span>
+                            </div>
+                            <div class="mini-sparkline" id="gas-sparkline"></div>
                         </div>
 
-                        <div class="sensor-point sensor-floor" data-sensor="air-quality">
-                            <div class="sensor-pulse"></div>
-                            <div class="sensor-dot"></div>
+                        <div class="metric-card glass-card sensor-metric" data-sensor="air-quality">
+                            <div class="sensor-header">
+                                <div class="sensor-icon air">
+                                    <i class="fas fa-smog"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Air Quality</span>
+                                    <span class="sensor-type">AQI Monitor</span>
+                                </div>
+                                <div class="sensor-status" id="air-quality-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="air-quality-card-value">0.0</span>
+                                <span class="value-unit">AQI</span>
+                            </div>
+                            <div class="mini-sparkline" id="air-quality-sparkline"></div>
                         </div>
 
-                        <!-- Grid Lines -->
-                        <div class="grid-overlay">
-                            <div class="grid-line horizontal" style="--i: 0"></div>
-                            <div class="grid-line horizontal" style="--i: 1"></div>
-                            <div class="grid-line horizontal" style="--i: 2"></div>
-                            <div class="grid-line horizontal" style="--i: 3"></div>
-                            <div class="grid-line vertical" style="--i: 0"></div>
-                            <div class="grid-line vertical" style="--i: 1"></div>
-                            <div class="grid-line vertical" style="--i: 2"></div>
-                            <div class="grid-line vertical" style="--i: 3"></div>
+                        <div class="metric-card glass-card sensor-metric" data-sensor="surface-temp">
+                            <div class="sensor-header">
+                                <div class="sensor-icon surface">
+                                    <i class="fas fa-temperature-high"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Surface Temp</span>
+                                    <span class="sensor-type">Infrared Sensor</span>
+                                </div>
+                                <div class="sensor-status" id="surface-temp-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="surface-temp-card-value">0.0</span>
+                                <span class="value-unit">°C</span>
+                            </div>
+                            <div class="mini-sparkline" id="surface-temp-sparkline"></div>
+                        </div>
+
+                        <div class="metric-card glass-card sensor-metric" data-sensor="current">
+                            <div class="sensor-header">
+                                <div class="sensor-icon current">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Current</span>
+                                    <span class="sensor-type">Current Sensor</span>
+                                </div>
+                                <div class="sensor-status" id="current-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="current-card-value">0.0</span>
+                                <span class="value-unit">A</span>
+                            </div>
+                            <div class="mini-sparkline" id="current-sparkline"></div>
+                        </div>
+
+                        <div class="metric-card glass-card sensor-metric" data-sensor="pressure">
+                            <div class="sensor-header">
+                                <div class="sensor-icon pressure">
+                                    <i class="fas fa-gauge-high"></i>
+                                </div>
+                                <div class="sensor-info">
+                                    <span class="sensor-name">Pressure</span>
+                                    <span class="sensor-type">Barometric</span>
+                                </div>
+                                <div class="sensor-status" id="pressure-card-status">
+                                    <span class="status-badge normal">NORMAL</span>
+                                </div>
+                            </div>
+                            <div class="sensor-value-row">
+                                <span class="big-value" id="pressure-card-value">0.0</span>
+                                <span class="value-unit">hPa</span>
+                            </div>
+                            <div class="mini-sparkline" id="pressure-sparkline"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Connection Lines -->
-                <svg class="connection-lines" viewBox="0 0 600 400">
-                    <defs>
-                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" style="stop-color:rgba(200,210,180,0.1)"/>
-                            <stop offset="50%" style="stop-color:rgba(200,210,180,0.4)"/>
-                            <stop offset="100%" style="stop-color:rgba(200,210,180,0.1)"/>
-                        </linearGradient>
-                    </defs>
-                    <path class="conn-line left-line" d="M0,100 Q150,100 200,200" stroke="url(#lineGradient)"/>
-                    <path class="conn-line left-line-2" d="M0,200 Q100,200 200,250" stroke="url(#lineGradient)"/>
-                    <path class="conn-line right-line" d="M600,80 Q450,80 400,180" stroke="url(#lineGradient)"/>
-                    <path class="conn-line right-line-2" d="M600,180 Q500,180 400,230" stroke="url(#lineGradient)"/>
-                    <path class="conn-line right-line-3" d="M600,280 Q500,280 400,280" stroke="url(#lineGradient)"/>
-                </svg>
+                <!-- Bottom Activity Chart -->
+                <div class="activity-section glass-card">
+                    <div class="activity-header">
+                        <h3>Sensor Activity / Week</h3>
+                        <div class="activity-controls">
+                            <button class="activity-btn" id="prevWeekBtn"><i class="fas fa-chevron-left"></i></button>
+                            <span class="week-label" id="weekLabel">This Week</span>
+                            <button class="activity-btn" id="nextWeekBtn"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="activity-chart" id="activityChart"></div>
+                    <div class="activity-legend">
+                        <span class="legend-item"><span class="dot normal"></span> Normal</span>
+                        <span class="legend-item"><span class="dot warning"></span> Warning</span>
+                        <span class="legend-item"><span class="dot critical"></span> Critical</span>
+                        <span class="legend-item"><span class="dot inactive"></span> No Data</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right Stats Column -->
-            <aside class="stats-column right-column">
-                <!-- Temperature Card -->
-                <div class="stat-card sanded-glass sensor-card" data-sensor="temperature">
-                    <div class="sensor-card-header">
-                        <div class="sensor-icon temp-icon">
-                            <i class="fas fa-thermometer-half"></i>
-                        </div>
-                        <div class="stat-label">Temperature</div>
-                    </div>
-                    <div class="stat-value-range">
-                        <span class="value-main" id="tempMin">22</span>
-                        <span class="value-divider">-</span>
-                        <span class="value-main" id="tempMax">28</span>
-                    </div>
-                    <div class="stat-unit">°C current range</div>
-                    <div class="mini-chart" id="tempMiniChart"></div>
+            <!-- Page: All Sensors -->
+            <div class="page" id="page-sensors">
+                <div class="sensors-page-grid" id="allSensorsGrid">
+                    <!-- Generated by JS -->
                 </div>
+            </div>
 
-                <!-- Gas Detection Card -->
-                <div class="stat-card sanded-glass sensor-card" data-sensor="gas">
-                    <div class="sensor-card-header">
-                        <div class="sensor-icon gas-icon">
-                            <i class="fas fa-smog"></i>
+            <!-- Page: Analytics -->
+            <div class="page" id="page-analytics">
+                <div class="analytics-grid">
+                    <div class="chart-card glass-card full-width">
+                        <div class="chart-header">
+                            <h3>Real-time Sensor Trends</h3>
+                            <div class="chart-controls">
+                                <select id="analyticsSensorSelect" class="chart-select">
+                                    <option value="temperature">Temperature</option>
+                                    <option value="humidity">Humidity</option>
+                                    <option value="gas">Gas Resistance</option>
+                                    <option value="air-quality">Air Quality</option>
+                                    <option value="co">Carbon Monoxide</option>
+                                    <option value="current">Current</option>
+                                </select>
+                                <select id="analyticsTimeRange" class="chart-select">
+                                    <option value="50">Last 50 readings</option>
+                                    <option value="100">Last 100 readings</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="stat-label">Gas Detection</div>
+                        <div class="large-chart" id="analyticsChart">
+                            <canvas id="analyticsCanvas"></canvas>
+                        </div>
                     </div>
-                    <div class="stat-value-range">
-                        <span class="value-main" id="gasMin">45</span>
-                        <span class="value-divider">-</span>
-                        <span class="value-main" id="gasMax">89</span>
-                    </div>
-                    <div class="stat-unit">ppm detected</div>
-                    <div class="mini-chart" id="gasMiniChart"></div>
-                </div>
 
-                <!-- Air Quality Card -->
-                <div class="stat-card sanded-glass sensor-card" data-sensor="air-quality">
-                    <div class="sensor-card-header">
-                        <div class="sensor-icon air-icon">
-                            <i class="fas fa-wind"></i>
+                    <div class="stats-row">
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="stat-content">
+                                <span class="stat-value" id="avgTemp">--</span>
+                                <span class="stat-label">Avg Temperature</span>
+                            </div>
                         </div>
-                        <div class="stat-label">Air Quality</div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                            <div class="stat-content">
+                                <span class="stat-value" id="avgHumidity">--</span>
+                                <span class="stat-label">Avg Humidity</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+                            <div class="stat-content">
+                                <span class="stat-value" id="avgCurrent">--</span>
+                                <span class="stat-label">Avg Current</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="stat-content">
+                                <span class="stat-value" id="totalAlerts">0</span>
+                                <span class="stat-label">Total Alerts Today</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-value-range">
-                        <span class="value-main" id="airMin">28</span>
-                        <span class="value-divider">-</span>
-                        <span class="value-main" id="airMax">52</span>
+
+                    <!-- Gauge Display -->
+                    <div class="gauges-row">
+                        <div class="gauge-card glass-card">
+                            <h4>Temperature</h4>
+                            <div class="gauge-container">
+                                <canvas id="tempGauge" width="200" height="120"></canvas>
+                            </div>
+                        </div>
+                        <div class="gauge-card glass-card">
+                            <h4>Humidity</h4>
+                            <div class="gauge-container">
+                                <canvas id="humidityGauge" width="200" height="120"></canvas>
+                            </div>
+                        </div>
+                        <div class="gauge-card glass-card">
+                            <h4>CO Level</h4>
+                            <div class="gauge-container">
+                                <canvas id="coGauge" width="200" height="120"></canvas>
+                            </div>
+                        </div>
+                        <div class="gauge-card glass-card">
+                            <h4>Current</h4>
+                            <div class="gauge-container">
+                                <canvas id="currentGauge" width="200" height="120"></canvas>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-unit">AQI index</div>
-                    <div class="mini-chart" id="airMiniChart"></div>
                 </div>
-            </aside>
+            </div>
+
+            <!-- Page: Alerts -->
+            <div class="page" id="page-alerts">
+                <div class="alerts-page">
+                    <div class="alerts-filters glass-card">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="critical">Critical</button>
+                        <button class="filter-btn" data-filter="warning">Warning</button>
+                        <button class="clear-btn" id="clearAlerts">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="alerts-list-container glass-card">
+                        <div class="alerts-list" id="alertsListFull">
+                            <div class="no-alerts">
+                                <i class="fas fa-check-circle"></i>
+                                <p>No alerts at this time</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
 
-        <!-- Bottom Activity Chart -->
-        <section class="activity-section">
-            <h3 class="activity-title">Sensor Activity / Week</h3>
-            <div class="activity-chart">
-                <div class="chart-navigation">
-                    <button class="chart-nav-btn" id="prevWeek">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
+    <!-- Sensor Detail Modal -->
+    <div class="modal" id="sensorDetailModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <div class="modal-icon" id="modalSensorIcon"><i class="fas fa-thermometer-half"></i></div>
+                    <div>
+                        <h2 id="modalSensorName">Temperature</h2>
+                        <span id="modalSensorType">Thermal Sensor</span>
+                    </div>
                 </div>
-
-                <div class="dot-chart" id="dotChart">
-                    <!-- Days will be generated by JS -->
-                </div>
-
-                <div class="chart-navigation">
-                    <button class="chart-nav-btn" id="nextWeek">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                <button class="modal-close" id="closeDetailModal"><i class="fas fa-times"></i></button>
             </div>
-            <div class="chart-legend">
-                <div class="legend-item">
-                    <span class="legend-dot normal"></span>
-                    <span>Normal</span>
+            <div class="modal-body">
+                <div class="modal-value-display">
+                    <span class="modal-value" id="modalSensorValue">0.0</span>
+                    <span class="modal-unit" id="modalSensorUnit">°C</span>
+                    <div class="modal-status" id="modalSensorStatus">
+                        <span class="status-badge normal">NORMAL</span>
+                    </div>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot warning"></span>
-                    <span>Warning</span>
+                <div class="modal-chart">
+                    <h4>Historical Data</h4>
+                    <canvas id="modalHistoryChart"></canvas>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot critical"></span>
-                    <span>Critical</span>
+                <div class="modal-thresholds">
+                    <div class="threshold-item">
+                        <span class="threshold-label">Warning Threshold</span>
+                        <span class="threshold-value warning" id="modalWarningThreshold">--</span>
+                    </div>
+                    <div class="threshold-item">
+                        <span class="threshold-label">Critical Threshold</span>
+                        <span class="threshold-value critical" id="modalCriticalThreshold">--</span>
+                    </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- All Sensors Modal -->
-        <div class="sensors-modal" id="sensorsModal">
-            <div class="modal-backdrop"></div>
-            <div class="modal-content sanded-glass">
-                <div class="modal-header">
-                    <h2>All Sensors</h2>
-                    <button class="modal-close" id="closeModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="sensors-grid" id="allSensorsGrid">
-                    <!-- Sensor cards will be generated by JS -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Alerts Panel -->
-        <div class="alerts-panel sanded-glass" id="alertsPanel">
-            <div class="alerts-header">
-                <i class="fas fa-bell"></i>
-                <span>Alerts</span>
-                <span class="alert-count" id="alertCount">0</span>
-            </div>
-            <div class="alerts-list" id="alertsList">
-                <!-- Alerts will be generated by JS -->
             </div>
         </div>
     </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <script src="3d-dashboard.js"></script>
 </body>
