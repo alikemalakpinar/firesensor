@@ -447,32 +447,55 @@ class AICO3DDashboard {
         }
     }
 
-    // All Sensors Page
+    // All Sensors Page - Premium Design
     renderAllSensorsPage() {
         const grid = document.getElementById('allSensorsGrid');
         if (!grid) return;
 
-        grid.innerHTML = Object.values(this.sensors).map(sensor => `
-            <div class="sensor-full-card glass-card" data-sensor="${sensor.id}">
-                <div class="sensor-header">
-                    <div class="sensor-icon ${sensor.iconClass}">
-                        <i class="fas ${sensor.icon}"></i>
+        grid.innerHTML = Object.values(this.sensors).map(sensor => {
+            const minVal = sensor.history.length > 0 ? Math.min(...sensor.history.map(h => h.value)).toFixed(1) : '--';
+            const maxVal = sensor.history.length > 0 ? Math.max(...sensor.history.map(h => h.value)).toFixed(1) : '--';
+            const avgVal = sensor.history.length > 0 ? (sensor.history.reduce((a, b) => a + b.value, 0) / sensor.history.length).toFixed(1) : '--';
+
+            return `
+                <div class="sensor-full-card glass-card" data-sensor="${sensor.id}" data-status="${sensor.status}">
+                    <div class="sensor-card-header">
+                        <div class="sensor-icon ${sensor.iconClass}">
+                            <i class="fas ${sensor.icon}"></i>
+                        </div>
+                        <div class="sensor-info">
+                            <span class="sensor-name">${sensor.name}</span>
+                            <span class="sensor-type">${this.getSensorCategory(sensor.id)}</span>
+                        </div>
+                        <div class="status-indicator-dot"></div>
                     </div>
-                    <div class="sensor-info">
-                        <span class="sensor-name">${sensor.name}</span>
-                        <span class="sensor-type">${sensor.id}</span>
-                    </div>
-                    <div class="sensor-status">
-                        <span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>
+                    <div class="sensor-card-body">
+                        <div class="sensor-value-display">
+                            <span class="big-value">${sensor.current.toFixed(1)}</span>
+                            <span class="value-unit">${sensor.unit}</span>
+                        </div>
+                        <div class="sensor-stats-row">
+                            <div class="sensor-stat">
+                                <span class="sensor-stat-label">Min</span>
+                                <span class="sensor-stat-value">${minVal}</span>
+                            </div>
+                            <div class="sensor-stat">
+                                <span class="sensor-stat-label">Avg</span>
+                                <span class="sensor-stat-value">${avgVal}</span>
+                            </div>
+                            <div class="sensor-stat">
+                                <span class="sensor-stat-label">Max</span>
+                                <span class="sensor-stat-value">${maxVal}</span>
+                            </div>
+                        </div>
+                        <div class="sensor-chart-container">
+                            <div class="mini-sparkline" id="${sensor.id}-full-sparkline"></div>
+                            <div class="sensor-threshold-indicator"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="sensor-value-row">
-                    <span class="big-value">${sensor.current.toFixed(1)}</span>
-                    <span class="value-unit">${sensor.unit}</span>
-                </div>
-                <div class="mini-sparkline" id="${sensor.id}-full-sparkline"></div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Add click handlers
         grid.querySelectorAll('.sensor-full-card').forEach(card => {
@@ -481,6 +504,64 @@ class AICO3DDashboard {
                 if (sensorId) this.showSensorModal(sensorId);
             });
         });
+
+        // Update sparklines
+        Object.keys(this.sensors).forEach(sensorId => {
+            this.updateFullSensorSparkline(sensorId);
+        });
+    }
+
+    getSensorCategory(sensorId) {
+        const categories = {
+            temperature: 'Environmental',
+            humidity: 'Environmental',
+            'air-quality': 'Air Monitor',
+            gas: 'Gas Detector',
+            'surface-temp': 'Thermal',
+            'surface-temp-2': 'Thermal',
+            tvoc: 'Air Quality',
+            eco2: 'Air Quality',
+            no2: 'Gas Detector',
+            co: 'Safety',
+            pressure: 'Environmental',
+            current: 'Electrical'
+        };
+        return categories[sensorId] || 'Sensor';
+    }
+
+    updateFullSensorSparkline(sensorId) {
+        const sensor = this.sensors[sensorId];
+        const container = document.getElementById(`${sensorId}-full-sparkline`);
+        if (!container || sensor.history.length < 2) return;
+
+        const data = sensor.history.slice(-40).map(h => h.value);
+        const width = container.offsetWidth || 280;
+        const height = container.offsetHeight || 50;
+
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+
+        const points = data.map((v, i) => {
+            const x = (i / (data.length - 1)) * width;
+            const y = height - ((v - min) / range) * (height - 8) - 4;
+            return `${x},${y}`;
+        }).join(' ');
+
+        const color = this.getSensorColor(sensorId);
+
+        container.innerHTML = `
+            <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="fullGrad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.4"/>
+                        <stop offset="100%" style="stop-color:${color};stop-opacity:0.05"/>
+                    </linearGradient>
+                </defs>
+                <polygon points="0,${height} ${points} ${width},${height}" fill="url(#fullGrad-${sensorId})"/>
+                <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `;
     }
 
     // Activity Chart
@@ -614,6 +695,8 @@ class AICO3DDashboard {
         this.renderGauge('humidityGauge', this.sensors.humidity);
         this.renderGauge('coGauge', this.sensors.co);
         this.renderGauge('currentGauge', this.sensors.current);
+        this.renderSystemHealthGauge();
+        this.renderSensorSummary();
     }
 
     renderGauge(canvasId, sensor) {
@@ -624,16 +707,20 @@ class AICO3DDashboard {
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
-        const centerY = height - 10;
-        const radius = 70;
+        const centerY = height - 20;
+        const radius = 75;
 
         ctx.clearRect(0, 0, width, height);
 
-        // Background arc
+        // Background arc with gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, width, 0);
+        bgGradient.addColorStop(0, 'rgba(255,255,255,0.05)');
+        bgGradient.addColorStop(1, 'rgba(255,255,255,0.1)');
+
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 15;
+        ctx.strokeStyle = bgGradient;
+        ctx.lineWidth = 12;
         ctx.stroke();
 
         // Value arc
@@ -641,26 +728,134 @@ class AICO3DDashboard {
         const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
         const endAngle = Math.PI + normalized * Math.PI;
 
-        let color = '#00ff88';
-        if (sensor.status === 'warning') color = '#ff6b35';
-        else if (sensor.status === 'critical') color = '#ff3b5c';
+        let color = '#10b981';
+        if (sensor.status === 'warning') color = '#f59e0b';
+        else if (sensor.status === 'critical') color = '#ef4444';
+
+        // Glow effect
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, Math.PI, endAngle, false);
         ctx.strokeStyle = color;
-        ctx.lineWidth = 15;
+        ctx.lineWidth = 12;
         ctx.lineCap = 'round';
         ctx.stroke();
 
-        // Value text
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px Inter';
-        ctx.textAlign = 'center';
-        ctx.fillText(sensor.current.toFixed(1), centerX, centerY - 20);
+        ctx.shadowBlur = 0;
 
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        // Value text
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 24px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(sensor.current.toFixed(1), centerX, centerY - 15);
+
+        ctx.fillStyle = 'rgba(248,250,252,0.5)';
         ctx.font = '12px Inter';
-        ctx.fillText(sensor.unit, centerX, centerY);
+        ctx.fillText(sensor.unit, centerX, centerY + 5);
+    }
+
+    renderSystemHealthGauge() {
+        const canvas = document.getElementById('systemHealthGauge');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = 90;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Calculate health percentage
+        let normalCount = 0, warningCount = 0, criticalCount = 0;
+        Object.values(this.sensors).forEach(sensor => {
+            if (sensor.status === 'critical') criticalCount++;
+            else if (sensor.status === 'warning') warningCount++;
+            else normalCount++;
+        });
+
+        const total = Object.keys(this.sensors).length;
+        const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
+
+        // Update display value
+        const valueEl = document.getElementById('systemHealthValue');
+        if (valueEl) valueEl.textContent = healthPercent;
+
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, false);
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 16;
+        ctx.stroke();
+
+        // Progress arc
+        const startAngle = -Math.PI / 2;
+        const endAngle = startAngle + (healthPercent / 100) * Math.PI * 2;
+
+        let color = '#10b981';
+        if (healthPercent < 50) color = '#ef4444';
+        else if (healthPercent < 75) color = '#f59e0b';
+
+        // Gradient for arc
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, '#00c8ff');
+        gradient.addColorStop(1, '#7c3aed');
+
+        // Glow effect
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+        ctx.strokeStyle = healthPercent >= 75 ? gradient : color;
+        ctx.lineWidth = 16;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+
+        // Inner decorative circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius - 25, 0, Math.PI * 2, false);
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    renderSensorSummary() {
+        const grid = document.getElementById('sensorSummaryGrid');
+        if (!grid) return;
+
+        // Show top 6 sensors
+        const topSensors = ['temperature', 'humidity', 'co', 'current', 'air-quality', 'pressure'];
+
+        grid.innerHTML = topSensors.map(sensorId => {
+            const sensor = this.sensors[sensorId];
+            if (!sensor) return '';
+
+            return `
+                <div class="sensor-summary-item" data-sensor="${sensorId}">
+                    <div class="summary-icon sensor-icon ${sensor.iconClass}">
+                        <i class="fas ${sensor.icon}"></i>
+                    </div>
+                    <div class="summary-info">
+                        <span class="summary-name">${sensor.name}</span>
+                        <span class="summary-value">${sensor.current.toFixed(1)} ${sensor.unit}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click handlers
+        grid.querySelectorAll('.sensor-summary-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const sensorId = item.dataset.sensor;
+                if (sensorId) this.showSensorModal(sensorId);
+            });
+        });
     }
 
     // Alerts
