@@ -73,16 +73,3 @@ Bu mesajda:
 
 
 
-
-
-
-
-
-süper bu sıra doğru ama artık veri bana direk böyle gelecek convert etmeye gerek yok A;34.2;31.8;360279.1;32.0;0.0;0.0;44.7;445.9;25.4;28.1;1.0;2.3;0;0;98.5;B
-A;34.3;31.7;359975.2;32.5;0.0;0.0;45.0;446.4;25.4;28.1;1.0;2.3;0;0;98.5;B
-A;34.2;31.8;353310.1;32.9;0.0;0.0;45.0;446.4;25.4;28.1;1.0;2.3;0;0;98.5;B
-A;34.2;31.8;344361.7;32.5;0.0;0.0;45.2;446.8;25.4;28.1;1.0;2.3;0;0;98.5;B gene mesaj hep A ile balalyıp Bile bitecek ve her biri noktalı virgül ile ; ayrılıyor birinden  örneğin şu mesaja göre ayrıştırılmış hali böyle A;34.2;31.8;360279.1;32.0;0.0;0.0;44.7;445.9;25.4;28.1;1.0;2.3;0;0;98.5;B
-bu veriye göre 34.2 sıcaklık değeri oluyor 31.8 ise nem oluyor bu ise 360279.1 gaz rezistans oluyor 
-bu ise 32.0 hava kalite oluyor bu ise 0.0 NO2 oluyor bu ise 0.0 CO oluyor bu ise TVOC oluyor 44.7 bu ise eco2 oluyor 445.9
-bu ise 25.4 yüzey sıcaklık 1 oluyor bu ise 28.1 yüzey sıcaklık 2 oluyor bu ise 1.0 basınç değeri oluyor bu ise 2.3 akım değeri oluyor
-akım oluyor bu ise 0 warning2 oluyor bu ise 0 bu da warning1 oluyor bu ise panel healt oluyor 98.5 ve en sonaki B ise mesajın bititğğni sonunu gösteriyor ek olarak mqtt.js de şöyle bir şey var şöyl bir şey eklemişmi sensorData[12]: Board Health - hexToFloat() ile float'a çevrilir bu olmayacak böyle bir şey yok buna göre mqtt.js aicofiresystem.html.css ve js i düzenle ve eko larak savedb.py yi de güncelle ek olarak get_data.php yi de güncelle ilk olarak aicofiresystem.html css ve js i güncelel birde mqtt.js i ekranda verilşeri görebileyim yeni formata göre 
