@@ -478,6 +478,154 @@
 
             <!-- Page: All Sensors -->
             <div class="page" id="page-sensors">
+                <!-- Device Selector Bar -->
+                <div class="page-toolbar glass-card">
+                    <div class="toolbar-left">
+                        <div class="device-selector">
+                            <button class="device-tab active" data-device="0">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Device 1</span>
+                                <span class="device-badge">Primary</span>
+                            </button>
+                            <button class="device-tab" data-device="1">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Device 2</span>
+                            </button>
+                            <button class="device-tab" data-device="2">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Device 3</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="grid" title="Grid View">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button class="view-btn" data-view="list" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>LIVE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Overview Cards -->
+                <div class="device-overview-row" id="deviceOverviewRow">
+                    <div class="device-overview-card glass-card active" data-device="0">
+                        <div class="device-card-header">
+                            <div class="device-icon">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="device-info">
+                                <span class="device-title">AICO Panel #1</span>
+                                <span class="device-location"><i class="fas fa-map-marker-alt"></i> Ana Pano</span>
+                            </div>
+                            <div class="device-health-ring">
+                                <svg viewBox="0 0 36 36">
+                                    <circle class="ring-bg" cx="18" cy="18" r="15"/>
+                                    <circle class="ring-progress" cx="18" cy="18" r="15" data-device="0"/>
+                                </svg>
+                                <span class="health-text" id="device0Health">100%</span>
+                            </div>
+                        </div>
+                        <div class="device-card-stats">
+                            <div class="mini-stat">
+                                <i class="fas fa-thermometer-half"></i>
+                                <span id="device0Temp">--°C</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-droplet"></i>
+                                <span id="device0Humidity">--%</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-bolt"></i>
+                                <span id="device0Current">--A</span>
+                            </div>
+                            <div class="mini-stat alerts">
+                                <i class="fas fa-bell"></i>
+                                <span id="device0Alerts">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-overview-card glass-card" data-device="1">
+                        <div class="device-card-header">
+                            <div class="device-icon">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="device-info">
+                                <span class="device-title">AICO Panel #2</span>
+                                <span class="device-location"><i class="fas fa-map-marker-alt"></i> Yedek Pano</span>
+                            </div>
+                            <div class="device-health-ring">
+                                <svg viewBox="0 0 36 36">
+                                    <circle class="ring-bg" cx="18" cy="18" r="15"/>
+                                    <circle class="ring-progress" cx="18" cy="18" r="15" data-device="1"/>
+                                </svg>
+                                <span class="health-text" id="device1Health">100%</span>
+                            </div>
+                        </div>
+                        <div class="device-card-stats">
+                            <div class="mini-stat">
+                                <i class="fas fa-thermometer-half"></i>
+                                <span id="device1Temp">--°C</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-droplet"></i>
+                                <span id="device1Humidity">--%</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-bolt"></i>
+                                <span id="device1Current">--A</span>
+                            </div>
+                            <div class="mini-stat alerts">
+                                <i class="fas fa-bell"></i>
+                                <span id="device1Alerts">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-overview-card glass-card" data-device="2">
+                        <div class="device-card-header">
+                            <div class="device-icon">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="device-info">
+                                <span class="device-title">AICO Panel #3</span>
+                                <span class="device-location"><i class="fas fa-map-marker-alt"></i> Dış Pano</span>
+                            </div>
+                            <div class="device-health-ring">
+                                <svg viewBox="0 0 36 36">
+                                    <circle class="ring-bg" cx="18" cy="18" r="15"/>
+                                    <circle class="ring-progress" cx="18" cy="18" r="15" data-device="2"/>
+                                </svg>
+                                <span class="health-text" id="device2Health">100%</span>
+                            </div>
+                        </div>
+                        <div class="device-card-stats">
+                            <div class="mini-stat">
+                                <i class="fas fa-thermometer-half"></i>
+                                <span id="device2Temp">--°C</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-droplet"></i>
+                                <span id="device2Humidity">--%</span>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-bolt"></i>
+                                <span id="device2Current">--A</span>
+                            </div>
+                            <div class="mini-stat alerts">
+                                <i class="fas fa-bell"></i>
+                                <span id="device2Alerts">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sensors Grid -->
                 <div class="sensors-page-grid" id="allSensorsGrid">
                     <!-- Generated by JS -->
                 </div>
@@ -485,27 +633,149 @@
 
             <!-- Page: Analytics -->
             <div class="page" id="page-analytics">
+                <!-- Analytics Toolbar -->
+                <div class="page-toolbar glass-card">
+                    <div class="toolbar-left">
+                        <div class="device-selector">
+                            <button class="device-tab active" data-device="all">
+                                <i class="fas fa-layer-group"></i>
+                                <span class="device-name">All Devices</span>
+                            </button>
+                            <button class="device-tab" data-device="0">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Panel #1</span>
+                            </button>
+                            <button class="device-tab" data-device="1">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Panel #2</span>
+                            </button>
+                            <button class="device-tab" data-device="2">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">Panel #3</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <select id="analyticsTimeRange" class="chart-select">
+                            <option value="50">Last 50 readings</option>
+                            <option value="100">Last 100 readings</option>
+                            <option value="200">Last 200 readings</option>
+                        </select>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>LIVE</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="analytics-grid">
+                    <!-- Energy Flow Visualization -->
+                    <div class="energy-flow-card glass-card">
+                        <div class="flow-header">
+                            <div class="flow-title">
+                                <h3>Energy Flow</h3>
+                                <span class="flow-subtitle">Real-time power distribution</span>
+                            </div>
+                            <div class="flow-stats">
+                                <div class="flow-stat">
+                                    <span class="flow-stat-value" id="totalPower">0.0</span>
+                                    <span class="flow-stat-label">Total kW</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="energy-flow-visual" id="energyFlowVisual">
+                            <svg class="flow-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
+                                <!-- Input Source -->
+                                <g class="flow-source">
+                                    <rect x="20" y="60" width="120" height="80" rx="8" class="source-box"/>
+                                    <text x="80" y="95" class="source-label">INPUT</text>
+                                    <text x="80" y="115" class="source-value" id="flowInputValue">220V</text>
+                                </g>
+
+                                <!-- Flow Lines -->
+                                <g class="flow-lines">
+                                    <path class="flow-line active" d="M140,100 Q200,100 250,60" id="flowLine1"/>
+                                    <path class="flow-line active" d="M140,100 L250,100" id="flowLine2"/>
+                                    <path class="flow-line active" d="M140,100 Q200,100 250,140" id="flowLine3"/>
+                                </g>
+
+                                <!-- Device Nodes -->
+                                <g class="flow-node" data-device="0">
+                                    <circle cx="300" cy="60" r="30" class="node-circle"/>
+                                    <text x="300" y="55" class="node-icon">&#xf2db;</text>
+                                    <text x="300" y="75" class="node-label">#1</text>
+                                    <text x="360" y="55" class="node-value" id="flowDevice0Current">0.0A</text>
+                                    <text x="360" y="75" class="node-power" id="flowDevice0Power">0W</text>
+                                </g>
+                                <g class="flow-node" data-device="1">
+                                    <circle cx="300" cy="100" r="30" class="node-circle"/>
+                                    <text x="300" y="95" class="node-icon">&#xf2db;</text>
+                                    <text x="300" y="115" class="node-label">#2</text>
+                                    <text x="360" y="95" class="node-value" id="flowDevice1Current">0.0A</text>
+                                    <text x="360" y="115" class="node-power" id="flowDevice1Power">0W</text>
+                                </g>
+                                <g class="flow-node" data-device="2">
+                                    <circle cx="300" cy="140" r="30" class="node-circle"/>
+                                    <text x="300" y="135" class="node-icon">&#xf2db;</text>
+                                    <text x="300" y="155" class="node-label">#3</text>
+                                    <text x="360" y="135" class="node-value" id="flowDevice2Current">0.0A</text>
+                                    <text x="360" y="155" class="node-power" id="flowDevice2Power">0W</text>
+                                </g>
+
+                                <!-- Output Lines -->
+                                <g class="flow-lines output">
+                                    <path class="flow-line" d="M430,60 L500,60" id="outLine1"/>
+                                    <path class="flow-line" d="M430,100 L500,100" id="outLine2"/>
+                                    <path class="flow-line" d="M430,140 L500,140" id="outLine3"/>
+                                </g>
+
+                                <!-- Status Indicators -->
+                                <g class="status-indicators">
+                                    <circle cx="520" cy="60" r="8" class="status-dot normal" id="status0"/>
+                                    <circle cx="520" cy="100" r="8" class="status-dot normal" id="status1"/>
+                                    <circle cx="520" cy="140" r="8" class="status-dot normal" id="status2"/>
+                                </g>
+
+                                <!-- Sensor Bars -->
+                                <g class="sensor-bars">
+                                    <rect x="550" y="45" width="200" height="30" rx="4" class="bar-bg"/>
+                                    <rect x="550" y="45" width="0" height="30" rx="4" class="bar-fill temp" id="tempBar0"/>
+                                    <text x="560" y="65" class="bar-label">TEMP</text>
+                                    <text x="740" y="65" class="bar-value" id="tempBarVal0">--°C</text>
+
+                                    <rect x="550" y="85" width="200" height="30" rx="4" class="bar-bg"/>
+                                    <rect x="550" y="85" width="0" height="30" rx="4" class="bar-fill humidity" id="humidityBar0"/>
+                                    <text x="560" y="105" class="bar-label">HUM</text>
+                                    <text x="740" y="105" class="bar-value" id="humidityBarVal0">--%</text>
+
+                                    <rect x="550" y="125" width="200" height="30" rx="4" class="bar-bg"/>
+                                    <rect x="550" y="125" width="0" height="30" rx="4" class="bar-fill co" id="coBar0"/>
+                                    <text x="560" y="145" class="bar-label">CO</text>
+                                    <text x="740" y="145" class="bar-value" id="coBarVal0">--ppm</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+
                     <!-- Main Chart Section -->
                     <div class="chart-card glass-card full-width">
                         <div class="chart-header">
-                            <h3>Real-time Sensor Trends</h3>
+                            <h3>Sensor Trends</h3>
                             <div class="chart-controls">
-                                <select id="analyticsSensorSelect" class="chart-select">
-                                    <option value="temperature">Temperature</option>
-                                    <option value="humidity">Humidity</option>
-                                    <option value="gas">Gas Resistance</option>
-                                    <option value="air-quality">Air Quality</option>
-                                    <option value="co">Carbon Monoxide</option>
-                                    <option value="current">Current</option>
-                                    <option value="pressure">Pressure</option>
-                                    <option value="tvoc">TVOC</option>
-                                    <option value="eco2">eCO2</option>
-                                </select>
-                                <select id="analyticsTimeRange" class="chart-select">
-                                    <option value="50">Last 50 readings</option>
-                                    <option value="100">Last 100 readings</option>
-                                </select>
+                                <div class="sensor-chips" id="sensorChips">
+                                    <button class="sensor-chip active" data-sensor="temperature">
+                                        <i class="fas fa-thermometer-half"></i> Temp
+                                    </button>
+                                    <button class="sensor-chip" data-sensor="humidity">
+                                        <i class="fas fa-droplet"></i> Humidity
+                                    </button>
+                                    <button class="sensor-chip" data-sensor="current">
+                                        <i class="fas fa-bolt"></i> Current
+                                    </button>
+                                    <button class="sensor-chip" data-sensor="co">
+                                        <i class="fas fa-skull-crossbones"></i> CO
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="large-chart" id="analyticsChart">
@@ -513,94 +783,92 @@
                         </div>
                     </div>
 
-                    <!-- Stats Row -->
-                    <div class="stats-row">
-                        <div class="stat-card glass-card">
-                            <div class="stat-icon"><i class="fas fa-thermometer-half"></i></div>
-                            <div class="stat-content">
-                                <span class="stat-value" id="avgTemp">--</span>
-                                <span class="stat-label">Avg Temperature</span>
+                    <!-- Device Comparison Section -->
+                    <div class="comparison-section">
+                        <!-- Big Gauge -->
+                        <div class="big-gauge-card glass-card">
+                            <div class="big-gauge-header">
+                                <h4>System Health</h4>
+                                <span class="gauge-status" id="systemStatus">All Systems Normal</span>
                             </div>
-                        </div>
-                        <div class="stat-card glass-card">
-                            <div class="stat-icon"><i class="fas fa-droplet"></i></div>
-                            <div class="stat-content">
-                                <span class="stat-value" id="avgHumidity">--</span>
-                                <span class="stat-label">Avg Humidity</span>
-                            </div>
-                        </div>
-                        <div class="stat-card glass-card">
-                            <div class="stat-icon"><i class="fas fa-bolt"></i></div>
-                            <div class="stat-content">
-                                <span class="stat-value" id="avgCurrent">--</span>
-                                <span class="stat-label">Avg Current</span>
-                            </div>
-                        </div>
-                        <div class="stat-card glass-card">
-                            <div class="stat-icon"><i class="fas fa-bell"></i></div>
-                            <div class="stat-content">
-                                <span class="stat-value" id="totalAlerts">0</span>
-                                <span class="stat-label">Total Alerts</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Energy Flow Section -->
-                    <div class="energy-flow-section">
-                        <!-- System Overview -->
-                        <div class="flow-card glass-card">
-                            <div class="flow-card-header">
-                                <h4>System Overview</h4>
-                            </div>
-                            <div class="flow-card-body">
-                                <div class="big-gauge-container">
-                                    <canvas id="systemHealthGauge" width="220" height="220"></canvas>
-                                    <div class="big-gauge-value">
-                                        <span class="value" id="systemHealthValue">0</span>
-                                        <span class="unit">%</span>
+                            <div class="big-gauge-body">
+                                <div class="circular-gauge-container">
+                                    <svg class="circular-gauge" viewBox="0 0 200 200">
+                                        <defs>
+                                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" style="stop-color:#00c8ff"/>
+                                                <stop offset="100%" style="stop-color:#7c3aed"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="gauge-bg" cx="100" cy="100" r="85"/>
+                                        <circle class="gauge-progress" cx="100" cy="100" r="85" id="mainGaugeProgress"/>
+                                        <circle class="gauge-inner" cx="100" cy="100" r="70"/>
+                                    </svg>
+                                    <div class="gauge-center-value">
+                                        <span class="gauge-percent" id="mainGaugeValue">100</span>
+                                        <span class="gauge-symbol">%</span>
                                     </div>
                                 </div>
-                                <div class="big-gauge-label">System Health</div>
-                            </div>
-                        </div>
-
-                        <!-- Sensor Summary -->
-                        <div class="flow-card glass-card">
-                            <div class="flow-card-header">
-                                <h4>Sensor Summary</h4>
-                            </div>
-                            <div class="flow-card-body">
-                                <div class="sensor-summary-grid" id="sensorSummaryGrid">
-                                    <!-- Generated by JS -->
+                                <div class="gauge-legend">
+                                    <div class="legend-item">
+                                        <span class="legend-dot normal"></span>
+                                        <span>Normal: <strong id="normalDevices">3</strong></span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-dot warning"></span>
+                                        <span>Warning: <strong id="warningDevices">0</strong></span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-dot critical"></span>
+                                        <span>Critical: <strong id="criticalDevices">0</strong></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Gauge Display -->
-                    <div class="gauges-row">
-                        <div class="gauge-card glass-card">
-                            <h4>Temperature</h4>
-                            <div class="gauge-container">
-                                <canvas id="tempGauge" width="200" height="140"></canvas>
+                        <!-- Quick Stats -->
+                        <div class="quick-stats-grid">
+                            <div class="quick-stat-card glass-card temp">
+                                <div class="stat-visual">
+                                    <canvas id="tempMiniGauge" width="80" height="80"></canvas>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-title">Temperature</span>
+                                    <span class="stat-big-value" id="avgTemp">--</span>
+                                    <span class="stat-range">Range: <span id="tempRange">-- ~ --</span></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="gauge-card glass-card">
-                            <h4>Humidity</h4>
-                            <div class="gauge-container">
-                                <canvas id="humidityGauge" width="200" height="140"></canvas>
+                            <div class="quick-stat-card glass-card humidity">
+                                <div class="stat-visual">
+                                    <canvas id="humidityMiniGauge" width="80" height="80"></canvas>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-title">Humidity</span>
+                                    <span class="stat-big-value" id="avgHumidity">--</span>
+                                    <span class="stat-range">Range: <span id="humidityRange">-- ~ --</span></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="gauge-card glass-card">
-                            <h4>CO Level</h4>
-                            <div class="gauge-container">
-                                <canvas id="coGauge" width="200" height="140"></canvas>
+                            <div class="quick-stat-card glass-card current">
+                                <div class="stat-visual">
+                                    <canvas id="currentMiniGauge" width="80" height="80"></canvas>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-title">Current</span>
+                                    <span class="stat-big-value" id="avgCurrent">--</span>
+                                    <span class="stat-range">Total: <span id="totalCurrent">--</span></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="gauge-card glass-card">
-                            <h4>Current</h4>
-                            <div class="gauge-container">
-                                <canvas id="currentGauge" width="200" height="140"></canvas>
+                            <div class="quick-stat-card glass-card alerts">
+                                <div class="stat-visual">
+                                    <div class="alert-count-display">
+                                        <span id="totalAlerts">0</span>
+                                    </div>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-title">Alerts Today</span>
+                                    <span class="stat-big-value" id="alertStatus">All Clear</span>
+                                    <span class="stat-range">Last: <span id="lastAlertTime">--</span></span>
+                                </div>
                             </div>
                         </div>
                     </div>
