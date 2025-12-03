@@ -1341,6 +1341,280 @@ body::after {
 .legend-item .dot.inactive { background: var(--bg-tertiary); }
 
 /* ============================================
+   Page Toolbar - Premium Design
+   ============================================ */
+.page-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius-xl);
+}
+
+.toolbar-left, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Device Selector Tabs */
+.device-selector {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-lg);
+}
+
+.device-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.device-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.device-tab.active {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 200, 255, 0.3);
+}
+
+.device-tab .device-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+}
+
+.device-tab.offline .device-status-dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 8px var(--accent-red);
+}
+
+.device-badge {
+    padding: 0.125rem 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* View Toggle */
+.view-toggle {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+}
+
+.view-btn {
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.view-btn:hover {
+    color: var(--text-primary);
+}
+
+.view-btn.active {
+    background: var(--accent-blue);
+    color: white;
+}
+
+/* Live Indicator */
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-green);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* ============================================
+   Device Overview Cards
+   ============================================ */
+.device-overview-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.device-overview-card {
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    border: 2px solid transparent;
+}
+
+.device-overview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.device-overview-card.active {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 30px rgba(0, 200, 255, 0.2);
+}
+
+.device-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.device-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 200, 255, 0.25);
+}
+
+.device-info {
+    flex: 1;
+}
+
+.device-title {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.device-location {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.device-location i {
+    font-size: 0.625rem;
+}
+
+.device-health-ring {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.device-health-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.device-health-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 3;
+}
+
+.device-health-ring .ring-progress {
+    fill: none;
+    stroke: var(--accent-green);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 94.2;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.device-health-ring .health-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.device-card-stats {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.mini-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+}
+
+.mini-stat i {
+    font-size: 0.75rem;
+    color: var(--accent-blue);
+}
+
+.mini-stat span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mini-stat.alerts i {
+    color: var(--accent-orange);
+}
+
+/* ============================================
    All Sensors Page - Premium Design
    ============================================ */
 .sensors-page-grid {
@@ -1845,6 +2119,427 @@ body::after {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* ============================================
+   Energy Flow Visualization
+   ============================================ */
+.energy-flow-card {
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.flow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+}
+
+.flow-title h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.flow-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.flow-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.flow-stat {
+    text-align: right;
+}
+
+.flow-stat-value {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--accent-orange);
+}
+
+.flow-stat-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.energy-flow-visual {
+    padding: 1.5rem;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+    overflow-x: auto;
+}
+
+.flow-svg {
+    width: 100%;
+    height: 200px;
+    font-family: 'Inter', sans-serif;
+}
+
+.source-box {
+    fill: rgba(245, 158, 11, 0.15);
+    stroke: var(--accent-orange);
+    stroke-width: 2;
+}
+
+.source-label {
+    fill: var(--text-muted);
+    font-size: 10px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.source-value {
+    fill: var(--accent-orange);
+    font-size: 16px;
+    font-weight: 700;
+    text-anchor: middle;
+}
+
+.flow-line {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.flow-line.active {
+    stroke: var(--accent-orange);
+    stroke-dasharray: 8 4;
+    animation: flowDash 1s linear infinite;
+}
+
+@keyframes flowDash {
+    to { stroke-dashoffset: -12; }
+}
+
+.node-circle {
+    fill: rgba(0, 200, 255, 0.15);
+    stroke: var(--accent-blue);
+    stroke-width: 2;
+    transition: var(--transition-fast);
+}
+
+.flow-node:hover .node-circle {
+    fill: rgba(0, 200, 255, 0.3);
+    filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.5));
+}
+
+.node-icon {
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 14px;
+    fill: var(--accent-blue);
+    text-anchor: middle;
+}
+
+.node-label {
+    fill: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    text-anchor: middle;
+}
+
+.node-value {
+    fill: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.node-power {
+    fill: var(--text-muted);
+    font-size: 11px;
+}
+
+.status-dot {
+    transition: var(--transition-fast);
+}
+
+.status-dot.normal {
+    fill: var(--accent-green);
+    filter: drop-shadow(0 0 6px var(--accent-green));
+}
+
+.status-dot.warning {
+    fill: var(--accent-orange);
+    filter: drop-shadow(0 0 6px var(--accent-orange));
+}
+
+.status-dot.critical {
+    fill: var(--accent-red);
+    filter: drop-shadow(0 0 6px var(--accent-red));
+    animation: statusBlink 0.5s ease-in-out infinite;
+}
+
+@keyframes statusBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.bar-bg {
+    fill: rgba(255, 255, 255, 0.05);
+}
+
+.bar-fill {
+    transition: width 0.5s ease;
+}
+
+.bar-fill.temp { fill: var(--accent-orange); }
+.bar-fill.humidity { fill: var(--accent-blue); }
+.bar-fill.co { fill: var(--accent-red); }
+
+.bar-label {
+    fill: var(--text-muted);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bar-value {
+    fill: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    text-anchor: end;
+}
+
+/* Sensor Chips */
+.sensor-chips {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sensor-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.sensor-chip:hover {
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+
+.sensor-chip.active {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+.sensor-chip i {
+    font-size: 0.6875rem;
+}
+
+/* ============================================
+   Comparison Section
+   ============================================ */
+.comparison-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.5rem;
+}
+
+.big-gauge-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.big-gauge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.big-gauge-header h4 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.gauge-status {
+    font-size: 0.75rem;
+    color: var(--accent-green);
+    font-weight: 500;
+}
+
+.big-gauge-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.circular-gauge-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.circular-gauge {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 12;
+}
+
+.gauge-progress {
+    fill: none;
+    stroke: url(#gaugeGradient);
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-dasharray: 534;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.8s ease;
+    filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.4));
+}
+
+.gauge-inner {
+    fill: rgba(0, 0, 0, 0.3);
+}
+
+.gauge-center-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.gauge-percent {
+    display: block;
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.gauge-symbol {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.gauge-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.gauge-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.gauge-legend .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.gauge-legend .legend-dot.normal { background: var(--accent-green); }
+.gauge-legend .legend-dot.warning { background: var(--accent-orange); }
+.gauge-legend .legend-dot.critical { background: var(--accent-red); }
+
+/* Quick Stats Grid */
+.quick-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.quick-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    transition: var(--transition-normal);
+}
+
+.quick-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.quick-stat-card .stat-visual {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-stat-card .stat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.quick-stat-card .stat-title {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-stat-card .stat-big-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.quick-stat-card .stat-range {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+.quick-stat-card.temp .stat-big-value { color: var(--accent-orange); }
+.quick-stat-card.humidity .stat-big-value { color: var(--accent-blue); }
+.quick-stat-card.current .stat-big-value { color: var(--accent-yellow); }
+.quick-stat-card.alerts .stat-big-value { color: var(--accent-green); }
+
+.alert-count-display {
+    width: 64px;
+    height: 64px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 2px solid var(--accent-green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--accent-green);
 }
 
 /* ============================================

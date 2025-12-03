@@ -27,8 +27,17 @@ class AICO3DDashboard {
             boardHealth: 0,
             alerts: [],
             lastUpdate: null,
-            gridVisible: true
+            gridVisible: true,
+            selectedDevice: 0,
+            selectedSensor: 'temperature'
         };
+
+        // Multi-device support - 3 devices
+        this.devices = [
+            { id: 0, name: 'AICO Panel #1', location: 'Ana Pano', online: true, health: 100, sensors: this.cloneSensors() },
+            { id: 1, name: 'AICO Panel #2', location: 'Yedek Pano', online: true, health: 100, sensors: this.cloneSensors() },
+            { id: 2, name: 'AICO Panel #3', location: 'Dış Pano', online: true, health: 100, sensors: this.cloneSensors() }
+        ];
 
         this.aiMessages = [
             "Tüm sensörler normal parametrelerde çalışıyor. Yangın riski tespit edilmedi.",
@@ -42,6 +51,14 @@ class AICO3DDashboard {
         this.init();
     }
 
+    cloneSensors() {
+        const clone = {};
+        Object.keys(this.sensors).forEach(key => {
+            clone[key] = { ...this.sensors[key], history: [], current: 0, status: 'normal' };
+        });
+        return clone;
+    }
+
     init() {
         this.setupEventListeners();
         this.startClock();
@@ -49,8 +66,66 @@ class AICO3DDashboard {
         this.renderAllSensorsPage();
         this.connectMQTT();
         this.startAIRotation();
+        this.updateDeviceOverview();
+        this.startDemoData(); // Demo data for testing
 
         console.log('AICO 3D Dashboard initialized');
+    }
+
+    startDemoData() {
+        // Generate demo data for all devices
+        setInterval(() => {
+            this.devices.forEach((device, index) => {
+                // Simulate different values for each device
+                const baseTemp = 22 + index * 2 + (Math.random() - 0.5) * 3;
+                const baseHumidity = 45 + index * 5 + (Math.random() - 0.5) * 5;
+                const baseCurrent = 2 + index * 0.5 + (Math.random() - 0.5) * 0.5;
+                const baseCO = 5 + index * 2 + Math.random() * 3;
+
+                this.updateDeviceSensor(index, 'temperature', baseTemp);
+                this.updateDeviceSensor(index, 'humidity', baseHumidity);
+                this.updateDeviceSensor(index, 'current', baseCurrent);
+                this.updateDeviceSensor(index, 'co', baseCO);
+                this.updateDeviceSensor(index, 'pressure', 1013 + Math.random() * 10);
+                this.updateDeviceSensor(index, 'air-quality', 30 + Math.random() * 20);
+            });
+
+            this.updateDeviceOverview();
+            this.updateEnergyFlow();
+
+            if (this.state.currentPage === 'analytics') {
+                this.updateAnalyticsChart();
+                this.updateMainGauge();
+                this.renderMiniGauges();
+            }
+        }, 2000);
+    }
+
+    updateDeviceSensor(deviceIndex, sensorId, value) {
+        const device = this.devices[deviceIndex];
+        if (!device || !device.sensors[sensorId]) return;
+
+        const sensor = device.sensors[sensorId];
+        sensor.current = value;
+
+        // Add to history
+        sensor.history.push({ value, time: new Date() });
+        if (sensor.history.length > 100) sensor.history.shift();
+
+        // Calculate status
+        if (value >= sensor.thresholds.critical) {
+            sensor.status = 'critical';
+        } else if (value >= sensor.thresholds.warning) {
+            sensor.status = 'warning';
+        } else {
+            sensor.status = 'normal';
+        }
+
+        // Update main sensors if this is the selected device
+        if (deviceIndex === this.state.selectedDevice) {
+            this.sensors[sensorId] = { ...this.sensors[sensorId], ...sensor };
+            this.updateSensorUI(sensorId);
+        }
     }
 
     setupEventListeners() {
@@ -105,10 +180,297 @@ class AICO3DDashboard {
         document.getElementById('analyticsSensorSelect')?.addEventListener('change', () => this.updateAnalyticsChart());
         document.getElementById('analyticsTimeRange')?.addEventListener('change', () => this.updateAnalyticsChart());
 
+        // Device selector tabs
+        document.querySelectorAll('.device-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const device = e.currentTarget.dataset.device;
+                if (device === 'all') {
+                    this.state.selectedDevice = 'all';
+                } else {
+                    this.selectDevice(parseInt(device));
+                }
+                document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+            });
+        });
+
+        // Device overview cards
+        document.querySelectorAll('.device-overview-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const device = parseInt(e.currentTarget.dataset.device);
+                this.selectDevice(device);
+            });
+        });
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const view = e.currentTarget.dataset.view;
+                const grid = document.getElementById('allSensorsGrid');
+                if (grid) {
+                    grid.classList.toggle('list-view', view === 'list');
+                }
+            });
+        });
+
+        // Sensor chips
+        document.querySelectorAll('.sensor-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                document.querySelectorAll('.sensor-chip').forEach(c => c.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.state.selectedSensor = e.currentTarget.dataset.sensor;
+                this.updateAnalyticsChart();
+            });
+        });
+
         // Keyboard
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.hideModal();
         });
+    }
+
+    selectDevice(deviceIndex) {
+        this.state.selectedDevice = deviceIndex;
+
+        // Update device overview cards
+        document.querySelectorAll('.device-overview-card').forEach(card => {
+            card.classList.toggle('active', parseInt(card.dataset.device) === deviceIndex);
+        });
+
+        // Update device tabs
+        document.querySelectorAll('.device-tab').forEach(tab => {
+            const tabDevice = tab.dataset.device;
+            tab.classList.toggle('active', tabDevice === String(deviceIndex));
+        });
+
+        // Copy device sensors to main sensors
+        const device = this.devices[deviceIndex];
+        if (device) {
+            Object.keys(device.sensors).forEach(sensorId => {
+                this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
+            });
+        }
+
+        // Re-render sensors page
+        this.renderAllSensorsPage();
+    }
+
+    updateDeviceOverview() {
+        this.devices.forEach((device, index) => {
+            // Calculate device health
+            let normalCount = 0, warningCount = 0, criticalCount = 0;
+            Object.values(device.sensors).forEach(sensor => {
+                if (sensor.status === 'critical') criticalCount++;
+                else if (sensor.status === 'warning') warningCount++;
+                else normalCount++;
+            });
+
+            const total = Object.keys(device.sensors).length;
+            device.health = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
+
+            // Update UI
+            const healthEl = document.getElementById(`device${index}Health`);
+            if (healthEl) healthEl.textContent = device.health + '%';
+
+            const tempEl = document.getElementById(`device${index}Temp`);
+            if (tempEl) tempEl.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
+
+            const humidityEl = document.getElementById(`device${index}Humidity`);
+            if (humidityEl) humidityEl.textContent = device.sensors.humidity.current.toFixed(0) + '%';
+
+            const currentEl = document.getElementById(`device${index}Current`);
+            if (currentEl) currentEl.textContent = device.sensors.current.current.toFixed(1) + 'A';
+
+            // Update health ring
+            const ringProgress = document.querySelector(`.ring-progress[data-device="${index}"]`);
+            if (ringProgress) {
+                const circumference = 94.2;
+                const offset = circumference - (device.health / 100) * circumference;
+                ringProgress.style.strokeDashoffset = offset;
+
+                if (criticalCount > 0) {
+                    ringProgress.style.stroke = '#ef4444';
+                } else if (warningCount > 0) {
+                    ringProgress.style.stroke = '#f59e0b';
+                } else {
+                    ringProgress.style.stroke = '#10b981';
+                }
+            }
+        });
+    }
+
+    updateEnergyFlow() {
+        // Update flow visualization
+        let totalPower = 0;
+
+        this.devices.forEach((device, index) => {
+            const current = device.sensors.current.current;
+            const power = current * 220; // Assuming 220V
+            totalPower += power;
+
+            // Update flow values
+            const currentEl = document.getElementById(`flowDevice${index}Current`);
+            if (currentEl) currentEl.textContent = current.toFixed(1) + 'A';
+
+            const powerEl = document.getElementById(`flowDevice${index}Power`);
+            if (powerEl) powerEl.textContent = Math.round(power) + 'W';
+
+            // Update status dots
+            const statusEl = document.getElementById(`status${index}`);
+            if (statusEl) {
+                statusEl.classList.remove('normal', 'warning', 'critical');
+                let status = 'normal';
+                Object.values(device.sensors).forEach(sensor => {
+                    if (sensor.status === 'critical') status = 'critical';
+                    else if (sensor.status === 'warning' && status !== 'critical') status = 'warning';
+                });
+                statusEl.classList.add(status);
+            }
+        });
+
+        // Update total power
+        const totalPowerEl = document.getElementById('totalPower');
+        if (totalPowerEl) totalPowerEl.textContent = (totalPower / 1000).toFixed(2);
+
+        // Update sensor bars (using first device)
+        const device = this.devices[0];
+        const tempBar = document.getElementById('tempBar0');
+        if (tempBar) {
+            const tempPercent = Math.min(100, (device.sensors.temperature.current - 15) / (60 - 15) * 100);
+            tempBar.setAttribute('width', tempPercent * 2);
+        }
+
+        const humidityBar = document.getElementById('humidityBar0');
+        if (humidityBar) {
+            const humidityPercent = Math.min(100, device.sensors.humidity.current);
+            humidityBar.setAttribute('width', humidityPercent * 2);
+        }
+
+        const coBar = document.getElementById('coBar0');
+        if (coBar) {
+            const coPercent = Math.min(100, device.sensors.co.current / 50 * 100);
+            coBar.setAttribute('width', coPercent * 2);
+        }
+
+        // Update bar values
+        const tempBarVal = document.getElementById('tempBarVal0');
+        if (tempBarVal) tempBarVal.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
+
+        const humidityBarVal = document.getElementById('humidityBarVal0');
+        if (humidityBarVal) humidityBarVal.textContent = device.sensors.humidity.current.toFixed(0) + '%';
+
+        const coBarVal = document.getElementById('coBarVal0');
+        if (coBarVal) coBarVal.textContent = device.sensors.co.current.toFixed(1) + 'ppm';
+    }
+
+    updateMainGauge() {
+        // Calculate overall system health
+        let totalHealth = 0;
+        let normalDevices = 0, warningDevices = 0, criticalDevices = 0;
+
+        this.devices.forEach(device => {
+            totalHealth += device.health;
+            if (device.health >= 90) normalDevices++;
+            else if (device.health >= 70) warningDevices++;
+            else criticalDevices++;
+        });
+
+        const avgHealth = Math.round(totalHealth / this.devices.length);
+
+        // Update gauge
+        const gaugeProgress = document.getElementById('mainGaugeProgress');
+        if (gaugeProgress) {
+            const circumference = 534;
+            const offset = circumference - (avgHealth / 100) * circumference;
+            gaugeProgress.style.strokeDashoffset = offset;
+        }
+
+        const gaugeValue = document.getElementById('mainGaugeValue');
+        if (gaugeValue) gaugeValue.textContent = avgHealth;
+
+        // Update status
+        const statusEl = document.getElementById('systemStatus');
+        if (statusEl) {
+            if (criticalDevices > 0) {
+                statusEl.textContent = 'Critical Alert';
+                statusEl.style.color = '#ef4444';
+            } else if (warningDevices > 0) {
+                statusEl.textContent = 'Warning';
+                statusEl.style.color = '#f59e0b';
+            } else {
+                statusEl.textContent = 'All Systems Normal';
+                statusEl.style.color = '#10b981';
+            }
+        }
+
+        // Update legend counts
+        document.getElementById('normalDevices')?.textContent && (document.getElementById('normalDevices').textContent = normalDevices);
+        document.getElementById('warningDevices')?.textContent && (document.getElementById('warningDevices').textContent = warningDevices);
+        document.getElementById('criticalDevices')?.textContent && (document.getElementById('criticalDevices').textContent = criticalDevices);
+
+        // Update stats
+        const avgTempEl = document.getElementById('avgTemp');
+        const avgHumidityEl = document.getElementById('avgHumidity');
+        const avgCurrentEl = document.getElementById('avgCurrent');
+
+        if (avgTempEl) {
+            const avgTemp = this.devices.reduce((sum, d) => sum + d.sensors.temperature.current, 0) / this.devices.length;
+            avgTempEl.textContent = avgTemp.toFixed(1) + '°C';
+        }
+
+        if (avgHumidityEl) {
+            const avgHumidity = this.devices.reduce((sum, d) => sum + d.sensors.humidity.current, 0) / this.devices.length;
+            avgHumidityEl.textContent = avgHumidity.toFixed(0) + '%';
+        }
+
+        if (avgCurrentEl) {
+            const totalCurrent = this.devices.reduce((sum, d) => sum + d.sensors.current.current, 0);
+            avgCurrentEl.textContent = totalCurrent.toFixed(2) + 'A';
+        }
+    }
+
+    renderMiniGauges() {
+        const device = this.devices[this.state.selectedDevice] || this.devices[0];
+
+        this.renderMiniGauge('tempMiniGauge', device.sensors.temperature, '#f59e0b');
+        this.renderMiniGauge('humidityMiniGauge', device.sensors.humidity, '#00c8ff');
+        this.renderMiniGauge('currentMiniGauge', device.sensors.current, '#eab308');
+    }
+
+    renderMiniGauge(canvasId, sensor, color) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = 30;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // Progress arc
+        const range = sensor.max - sensor.min;
+        const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
+        const startAngle = -Math.PI / 2;
+        const endAngle = startAngle + normalized * Math.PI * 2;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.stroke();
     }
 
     connectMQTT() {
@@ -441,7 +803,12 @@ class AICO3DDashboard {
         // Page-specific updates
         if (page === 'analytics') {
             this.updateAnalyticsChart();
-            this.renderGauges();
+            this.updateEnergyFlow();
+            this.updateMainGauge();
+            this.renderMiniGauges();
+        } else if (page === 'sensors') {
+            this.renderAllSensorsPage();
+            this.updateDeviceOverview();
         } else if (page === 'alerts') {
             this.renderAlertsList();
         }
@@ -596,8 +963,9 @@ class AICO3DDashboard {
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const sensorId = document.getElementById('analyticsSensorSelect')?.value || 'temperature';
-        const sensor = this.sensors[sensorId];
+        const sensorId = this.state.selectedSensor || 'temperature';
+        const device = this.devices[this.state.selectedDevice] || this.devices[0];
+        const sensor = device ? device.sensors[sensorId] : this.sensors[sensorId];
         const count = parseInt(document.getElementById('analyticsTimeRange')?.value || '50');
 
         const data = sensor.history.slice(-count).map(h => h.value);
