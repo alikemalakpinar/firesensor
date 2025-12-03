@@ -92,6 +92,7 @@ class AICO3DDashboard {
 
             this.updateDeviceOverview();
             this.updateEnergyFlow();
+            this.updateDashboardSummary();
 
             if (this.state.currentPage === 'analytics') {
                 this.updateAnalyticsChart();
@@ -180,17 +181,29 @@ class AICO3DDashboard {
         document.getElementById('analyticsSensorSelect')?.addEventListener('change', () => this.updateAnalyticsChart());
         document.getElementById('analyticsTimeRange')?.addEventListener('change', () => this.updateAnalyticsChart());
 
-        // Device selector tabs
-        document.querySelectorAll('.device-tab').forEach(tab => {
+        // Device selector tabs (All Sensors & Analytics pages)
+        document.querySelectorAll('#page-sensors .device-tab, #page-analytics .device-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const device = e.currentTarget.dataset.device;
+                const container = e.currentTarget.closest('.device-selector');
                 if (device === 'all') {
                     this.state.selectedDevice = 'all';
                 } else {
                     this.selectDevice(parseInt(device));
                 }
-                document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
+                container.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
                 e.currentTarget.classList.add('active');
+            });
+        });
+
+        // Dashboard device selector
+        document.querySelectorAll('#dashboardDeviceSelector .device-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const device = parseInt(e.currentTarget.dataset.device);
+                this.selectDevice(device);
+                document.querySelectorAll('#dashboardDeviceSelector .device-tab').forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.updateDashboardForDevice(device);
             });
         });
 
@@ -239,12 +252,6 @@ class AICO3DDashboard {
             card.classList.toggle('active', parseInt(card.dataset.device) === deviceIndex);
         });
 
-        // Update device tabs
-        document.querySelectorAll('.device-tab').forEach(tab => {
-            const tabDevice = tab.dataset.device;
-            tab.classList.toggle('active', tabDevice === String(deviceIndex));
-        });
-
         // Copy device sensors to main sensors
         const device = this.devices[deviceIndex];
         if (device) {
@@ -255,6 +262,40 @@ class AICO3DDashboard {
 
         // Re-render sensors page
         this.renderAllSensorsPage();
+        this.updateSystemStatus();
+    }
+
+    updateDashboardForDevice(deviceIndex) {
+        const device = this.devices[deviceIndex];
+        if (!device) return;
+
+        // Copy device sensors to main sensors for display
+        Object.keys(device.sensors).forEach(sensorId => {
+            this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
+            this.updateSensorUI(sensorId);
+            this.updateSensorSparkline(sensorId);
+        });
+
+        this.updateSystemStatus();
+        this.updatePanelDisplay();
+    }
+
+    updateDashboardSummary() {
+        // Calculate total power
+        let totalPower = 0;
+        let totalTemp = 0;
+        this.devices.forEach(device => {
+            totalPower += device.sensors.current.current * 220;
+            totalTemp += device.sensors.temperature.current;
+        });
+
+        const avgTemp = totalTemp / this.devices.length;
+
+        const powerEl = document.getElementById('dashTotalPower');
+        if (powerEl) powerEl.textContent = (totalPower / 1000).toFixed(2) + ' kW';
+
+        const tempEl = document.getElementById('dashAvgTemp');
+        if (tempEl) tempEl.textContent = avgTemp.toFixed(1) + '°C';
     }
 
     updateDeviceOverview() {
@@ -650,29 +691,60 @@ class AICO3DDashboard {
         const data = sensor.history.slice(-30).map(h => h.value);
         const width = container.offsetWidth || 200;
         const height = container.offsetHeight || 40;
+        const padding = 3;
 
         const min = Math.min(...data);
         const max = Math.max(...data);
         const range = max - min || 1;
 
-        const points = data.map((v, i) => {
-            const x = (i / (data.length - 1)) * width;
-            const y = height - ((v - min) / range) * (height - 4) - 2;
-            return `${x},${y}`;
-        }).join(' ');
+        // Calculate points
+        const points = data.map((v, i) => ({
+            x: (i / (data.length - 1)) * width,
+            y: height - padding - ((v - min) / range) * (height - padding * 2)
+        }));
+
+        // Create smooth bezier path
+        let pathD = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = i > 0 ? points[i - 1] : points[0];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = i < points.length - 2 ? points[i + 2] : p2;
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+        }
+
+        // Create fill path
+        const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
 
         const color = this.getSensorColor(sensorId);
+        const lastPoint = points[points.length - 1];
 
         container.innerHTML = `
             <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="grad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.5"/>
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.4"/>
+                        <stop offset="50%" style="stop-color:${color};stop-opacity:0.15"/>
                         <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
                     </linearGradient>
+                    <filter id="glow-${sensorId}" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
                 </defs>
-                <polygon points="0,${height} ${points} ${width},${height}" fill="url(#grad-${sensorId})"/>
-                <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+                <path d="${fillPathD}" fill="url(#grad-${sensorId})"/>
+                <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-${sensorId})"/>
+                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="4" fill="${color}" filter="url(#glow-${sensorId})"/>
+                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="2" fill="#fff"/>
             </svg>
         `;
     }
@@ -904,29 +976,66 @@ class AICO3DDashboard {
         const data = sensor.history.slice(-40).map(h => h.value);
         const width = container.offsetWidth || 280;
         const height = container.offsetHeight || 50;
+        const padding = 4;
 
         const min = Math.min(...data);
         const max = Math.max(...data);
         const range = max - min || 1;
 
-        const points = data.map((v, i) => {
-            const x = (i / (data.length - 1)) * width;
-            const y = height - ((v - min) / range) * (height - 8) - 4;
-            return `${x},${y}`;
-        }).join(' ');
+        // Calculate points
+        const points = data.map((v, i) => ({
+            x: (i / (data.length - 1)) * width,
+            y: height - padding - ((v - min) / range) * (height - padding * 2)
+        }));
+
+        // Create smooth bezier path
+        let pathD = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = i > 0 ? points[i - 1] : points[0];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = i < points.length - 2 ? points[i + 2] : p2;
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+        }
+
+        // Create fill path
+        const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
 
         const color = this.getSensorColor(sensorId);
+        const lastPoint = points[points.length - 1];
+        const lastValue = data[data.length - 1];
+        const status = lastValue >= sensor.thresholds.critical ? 'critical' :
+                      lastValue >= sensor.thresholds.warning ? 'warning' : 'normal';
+        const dotColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : color;
 
         container.innerHTML = `
             <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                 <defs>
                     <linearGradient id="fullGrad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.4"/>
-                        <stop offset="100%" style="stop-color:${color};stop-opacity:0.05"/>
+                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.45"/>
+                        <stop offset="40%" style="stop-color:${color};stop-opacity:0.2"/>
+                        <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
                     </linearGradient>
+                    <filter id="fullGlow-${sensorId}" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
                 </defs>
-                <polygon points="0,${height} ${points} ${width},${height}" fill="url(#fullGrad-${sensorId})"/>
-                <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="${fillPathD}" fill="url(#fullGrad-${sensorId})"/>
+                <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#fullGlow-${sensorId})"/>
+                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="6" fill="${dotColor}" filter="url(#fullGlow-${sensorId})">
+                    <animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="3" fill="#fff"/>
             </svg>
         `;
     }
@@ -957,7 +1066,7 @@ class AICO3DDashboard {
         }).join('');
     }
 
-    // Analytics
+    // Premium Analytics Chart with Bezier Curves and Animations
     updateAnalyticsChart() {
         const canvas = document.getElementById('analyticsCanvas');
         if (!canvas) return;
@@ -968,94 +1077,334 @@ class AICO3DDashboard {
         const sensor = device ? device.sensors[sensorId] : this.sensors[sensorId];
         const count = parseInt(document.getElementById('analyticsTimeRange')?.value || '50');
 
-        const data = sensor.history.slice(-count).map(h => h.value);
+        let data = sensor.history.slice(-count).map(h => h.value);
         if (data.length < 2) {
-            // Generate sample data if no history
+            // Generate smooth sample data if no history
             for (let i = 0; i < count; i++) {
-                data.push(sensor.min + Math.random() * (sensor.max - sensor.min) * 0.5);
+                const t = i / count;
+                const wave = Math.sin(t * Math.PI * 4) * 0.2 + Math.sin(t * Math.PI * 7) * 0.1;
+                data.push(sensor.min + (sensor.max - sensor.min) * (0.3 + wave + Math.random() * 0.1));
             }
         }
 
-        const width = canvas.parentElement.offsetWidth;
-        const height = canvas.parentElement.offsetHeight;
-        canvas.width = width;
-        canvas.height = height;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.scale(dpr, dpr);
 
-        const padding = 40;
-        const chartWidth = width - padding * 2;
-        const chartHeight = height - padding * 2;
+        const width = rect.width;
+        const height = rect.height;
+        const padding = { top: 30, right: 30, bottom: 40, left: 55 };
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
 
-        const min = Math.min(...data);
-        const max = Math.max(...data);
+        const min = Math.min(...data) * 0.95;
+        const max = Math.max(...data) * 1.05;
         const range = max - min || 1;
 
-        // Clear
-        ctx.clearRect(0, 0, width, height);
+        // Clear with subtle gradient background
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+        bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+        bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, width, height);
 
-        // Grid
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 5; i++) {
-            const y = padding + (i / 5) * chartHeight;
+        // Draw premium grid
+        this.drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height);
+
+        // Calculate bezier points for smooth curve
+        const points = data.map((v, i) => ({
+            x: padding.left + (i / (data.length - 1)) * chartWidth,
+            y: padding.top + ((max - v) / range) * chartHeight
+        }));
+
+        // Draw gradient fill under curve
+        const color = this.getSensorColor(sensorId);
+        this.drawChartGradientFill(ctx, points, color, padding, height);
+
+        // Draw smooth bezier curve with glow
+        this.drawBezierCurve(ctx, points, color);
+
+        // Draw data points with animation
+        this.drawDataPoints(ctx, points, color, data, sensor);
+
+        // Draw threshold lines if applicable
+        this.drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range);
+
+        // Update stats
+        this.updateChartStats(sensor, sensorId);
+
+        document.getElementById('totalAlerts').textContent = this.state.alerts.length;
+    }
+
+    drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height) {
+        const gridLines = 6;
+
+        // Horizontal grid lines with gradient
+        for (let i = 0; i <= gridLines; i++) {
+            const y = padding.top + (i / gridLines) * chartHeight;
+            const alpha = i === 0 || i === gridLines ? 0.15 : 0.06;
+
+            ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`;
+            ctx.lineWidth = i === 0 || i === gridLines ? 1 : 0.5;
+            ctx.setLineDash(i === 0 || i === gridLines ? [] : [4, 4]);
             ctx.beginPath();
-            ctx.moveTo(padding, y);
-            ctx.lineTo(width - padding, y);
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(width - padding.right, y);
             ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Labels
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '11px Inter';
+            // Value labels with glow
+            const val = max - (i / gridLines) * range;
+            ctx.font = '600 11px Inter';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.textAlign = 'right';
-            const val = max - (i / 5) * range;
-            ctx.fillText(val.toFixed(1), padding - 5, y + 4);
+            ctx.fillText(val.toFixed(1), padding.left - 10, y + 4);
         }
 
-        // Line
-        const color = this.getSensorColor(sensorId);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
+        // Vertical grid lines (time markers)
+        const vLines = 8;
+        for (let i = 0; i <= vLines; i++) {
+            const x = padding.left + (i / vLines) * chartWidth;
 
-        data.forEach((v, i) => {
-            const x = padding + (i / (data.length - 1)) * chartWidth;
-            const y = padding + ((max - v) / range) * chartHeight;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
+            ctx.strokeStyle = 'rgba(0, 200, 255, 0.04)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, height - padding.bottom);
+            ctx.stroke();
 
-        // Fill
-        const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-        gradient.addColorStop(0, color.replace(')', ',0.3)').replace('rgb', 'rgba'));
-        gradient.addColorStop(1, color.replace(')', ',0)').replace('rgb', 'rgba'));
+            // Time labels
+            if (i % 2 === 0) {
+                ctx.font = '500 10px Inter';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.textAlign = 'center';
+                const timeAgo = Math.round((1 - i / vLines) * 60);
+                ctx.fillText(timeAgo === 0 ? 'Now' : `-${timeAgo}s`, x, height - padding.bottom + 20);
+            }
+        }
+    }
+
+    drawChartGradientFill(ctx, points, color, padding, height) {
+        if (points.length < 2) return;
+
+        // Create multi-stop gradient for premium fill
+        const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+        gradient.addColorStop(0, this.hexToRgba(color, 0.35));
+        gradient.addColorStop(0.3, this.hexToRgba(color, 0.2));
+        gradient.addColorStop(0.7, this.hexToRgba(color, 0.08));
+        gradient.addColorStop(1, this.hexToRgba(color, 0));
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.moveTo(padding, height - padding);
-        data.forEach((v, i) => {
-            const x = padding + (i / (data.length - 1)) * chartWidth;
-            const y = padding + ((max - v) / range) * chartHeight;
-            ctx.lineTo(x, y);
-        });
-        ctx.lineTo(width - padding, height - padding);
+        ctx.moveTo(points[0].x, height - padding.bottom);
+
+        // Use bezier curves for smooth fill
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i];
+            const p1 = points[i + 1];
+            const cpx = (p0.x + p1.x) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, cpx, (p0.y + p1.y) / 2);
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.lineTo(points[points.length - 1].x, height - padding.bottom);
         ctx.closePath();
         ctx.fill();
+    }
 
-        // Update stats
+    drawBezierCurve(ctx, points, color) {
+        if (points.length < 2) return;
+
+        // Glow effect layer
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        // Draw smooth bezier curve through all points
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = i > 0 ? points[i - 1] : points[0];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = i < points.length - 2 ? points[i + 2] : p2;
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+        ctx.stroke();
+
+        // Secondary line for more vibrant look
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = i > 0 ? points[i - 1] : points[0];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = i < points.length - 2 ? points[i + 2] : p2;
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+        ctx.stroke();
+    }
+
+    drawDataPoints(ctx, points, color, data, sensor) {
+        // Only draw points for visible data (every nth point to avoid clutter)
+        const step = Math.max(1, Math.floor(points.length / 15));
+
+        points.forEach((point, i) => {
+            if (i % step !== 0 && i !== points.length - 1) return;
+
+            const isLast = i === points.length - 1;
+            const value = data[i];
+            const status = value >= sensor.thresholds.critical ? 'critical' :
+                          value >= sensor.thresholds.warning ? 'warning' : 'normal';
+
+            // Point glow
+            ctx.shadowColor = isLast ? color : 'transparent';
+            ctx.shadowBlur = isLast ? 20 : 0;
+
+            // Outer ring
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, isLast ? 8 : 5, 0, Math.PI * 2);
+            ctx.fillStyle = status === 'critical' ? '#ef4444' :
+                           status === 'warning' ? '#f59e0b' :
+                           this.hexToRgba(color, 0.2);
+            ctx.fill();
+
+            // Inner dot
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, isLast ? 4 : 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = isLast ? '#fff' : color;
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+
+            // Value tooltip for last point
+            if (isLast) {
+                const tooltipWidth = 60;
+                const tooltipHeight = 28;
+                const tooltipX = point.x - tooltipWidth / 2;
+                const tooltipY = point.y - tooltipHeight - 15;
+
+                // Tooltip background
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.beginPath();
+                ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 6);
+                ctx.fill();
+
+                // Tooltip border
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Tooltip text
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(value.toFixed(1) + sensor.unit, point.x, tooltipY + 18);
+            }
+        });
+    }
+
+    drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range) {
+        // Warning threshold line
+        if (sensor.thresholds.warning >= min && sensor.thresholds.warning <= max) {
+            const y = padding.top + ((max - sensor.thresholds.warning) / range) * chartHeight;
+
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + chartWidth, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Label
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = '600 9px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText('WARNING', padding.left + chartWidth + 5, y + 3);
+        }
+
+        // Critical threshold line
+        if (sensor.thresholds.critical >= min && sensor.thresholds.critical <= max) {
+            const y = padding.top + ((max - sensor.thresholds.critical) / range) * chartHeight;
+
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + chartWidth, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Label
+            ctx.fillStyle = '#ef4444';
+            ctx.font = '600 9px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText('CRITICAL', padding.left + chartWidth + 5, y + 3);
+        }
+    }
+
+    updateChartStats(sensor, sensorId) {
         if (sensor.history.length > 0) {
             const values = sensor.history.map(h => h.value);
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
 
             if (sensorId === 'temperature') {
-                document.getElementById('avgTemp').textContent = avg.toFixed(1) + '°C';
+                document.getElementById('avgTemp')?.textContent && (document.getElementById('avgTemp').textContent = avg.toFixed(1) + '°C');
+                document.getElementById('tempRange')?.textContent && (document.getElementById('tempRange').textContent = `${minVal.toFixed(1)} ~ ${maxVal.toFixed(1)}°C`);
             } else if (sensorId === 'humidity') {
-                document.getElementById('avgHumidity').textContent = avg.toFixed(1) + '%';
+                document.getElementById('avgHumidity')?.textContent && (document.getElementById('avgHumidity').textContent = avg.toFixed(1) + '%');
+                document.getElementById('humidityRange')?.textContent && (document.getElementById('humidityRange').textContent = `${minVal.toFixed(0)} ~ ${maxVal.toFixed(0)}%`);
             } else if (sensorId === 'current') {
-                document.getElementById('avgCurrent').textContent = avg.toFixed(2) + 'A';
+                document.getElementById('avgCurrent')?.textContent && (document.getElementById('avgCurrent').textContent = avg.toFixed(2) + 'A');
+                document.getElementById('totalCurrent')?.textContent && (document.getElementById('totalCurrent').textContent = (avg * 3).toFixed(2) + 'A');
             }
         }
+    }
 
-        document.getElementById('totalAlerts').textContent = this.state.alerts.length;
+    hexToRgba(hex, alpha) {
+        // Handle named colors or hex
+        const colors = {
+            '#ff6b35': `rgba(255, 107, 53, ${alpha})`,
+            '#00d4ff': `rgba(0, 212, 255, ${alpha})`,
+            '#6366f1': `rgba(99, 102, 241, ${alpha})`,
+            '#ffc107': `rgba(255, 193, 7, ${alpha})`,
+            '#8a2be2': `rgba(138, 43, 226, ${alpha})`,
+            '#ff1493': `rgba(255, 20, 147, ${alpha})`,
+            '#00ff88': `rgba(0, 255, 136, ${alpha})`,
+            '#ffd700': `rgba(255, 215, 0, ${alpha})`,
+            '#a855f7': `rgba(168, 85, 247, ${alpha})`,
+            '#ff3b5c': `rgba(255, 59, 92, ${alpha})`,
+            '#6c757d': `rgba(108, 117, 125, ${alpha})`,
+            '#ffff00': `rgba(255, 255, 0, ${alpha})`
+        };
+        return colors[hex] || `rgba(0, 200, 255, ${alpha})`;
     }
 
     renderGauges() {

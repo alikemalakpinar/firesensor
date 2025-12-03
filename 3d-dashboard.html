@@ -99,6 +99,43 @@
 
             <!-- Page: Dashboard -->
             <div class="page active" id="page-dashboard">
+                <!-- Device Selector for Dashboard -->
+                <div class="page-toolbar glass-card dashboard-toolbar">
+                    <div class="toolbar-left">
+                        <div class="device-selector" id="dashboardDeviceSelector">
+                            <button class="device-tab active" data-device="0">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">AICO Panel #1</span>
+                                <span class="device-badge">Primary</span>
+                            </button>
+                            <button class="device-tab" data-device="1">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">AICO Panel #2</span>
+                            </button>
+                            <button class="device-tab" data-device="2">
+                                <div class="device-status-dot"></div>
+                                <span class="device-name">AICO Panel #3</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <div class="dashboard-summary">
+                            <div class="summary-stat">
+                                <span class="summary-label">Total Power</span>
+                                <span class="summary-value" id="dashTotalPower">0.0 kW</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span class="summary-label">Avg Temp</span>
+                                <span class="summary-value" id="dashAvgTemp">--°C</span>
+                            </div>
+                        </div>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>LIVE</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid">
                     <!-- Left Column: Key Metrics -->
                     <div class="metrics-column">
