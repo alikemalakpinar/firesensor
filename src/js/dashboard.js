@@ -1,11 +1,5 @@
-/**
- * AICO 3D Fire Detection Dashboard
- * Full MQTT Integration with Real Sensor Data
- */
-
 class AICO3DDashboard {
     constructor() {
-        // Sensor definitions matching your existing system
         this.sensors = {
             temperature: { id: 'temperature', name: 'Temperature', unit: '°C', icon: 'fa-thermometer-half', iconClass: 'temp', current: 0, history: [], status: 'normal', thresholds: { warning: 35, critical: 45 }, min: 15, max: 60 },
             humidity: { id: 'humidity', name: 'Humidity', unit: '%', icon: 'fa-droplet', iconClass: 'humidity', current: 0, history: [], status: 'normal', thresholds: { warning: 70, critical: 85 }, min: 20, max: 85 },
@@ -20,7 +14,6 @@ class AICO3DDashboard {
             pressure: { id: 'pressure', name: 'Pressure', unit: 'hPa', icon: 'fa-gauge-high', iconClass: 'pressure', current: 0, history: [], status: 'normal', thresholds: { warning: 1050, critical: 1080 }, min: 900, max: 1100 },
             current: { id: 'current', name: 'Current', unit: 'A', icon: 'fa-bolt', iconClass: 'current', current: 0, history: [], status: 'normal', thresholds: { warning: 5, critical: 8 }, min: 0, max: 10 }
         };
-
         this.state = {
             currentPage: 'dashboard',
             mqttConnected: false,
@@ -31,14 +24,11 @@ class AICO3DDashboard {
             selectedDevice: 0,
             selectedSensor: 'temperature'
         };
-
-        // Multi-device support - 3 devices
         this.devices = [
             { id: 0, name: 'AICO Panel #1', location: 'Ana Pano', online: true, health: 100, sensors: this.cloneSensors() },
             { id: 1, name: 'AICO Panel #2', location: 'Yedek Pano', online: true, health: 100, sensors: this.cloneSensors() },
             { id: 2, name: 'AICO Panel #3', location: 'Dış Pano', online: true, health: 100, sensors: this.cloneSensors() }
         ];
-
         this.aiMessages = [
             "Tüm sensörler normal parametrelerde çalışıyor. Yangın riski tespit edilmedi.",
             "Panel sıcaklığı stabil. Soğutma sistemi verimli çalışıyor.",
@@ -47,10 +37,8 @@ class AICO3DDashboard {
             "Nem seviyesi kabul edilebilir aralıkta.",
             "Tüm devreler aktif ve çalışır durumda."
         ];
-
         this.init();
     }
-
     cloneSensors() {
         const clone = {};
         Object.keys(this.sensors).forEach(key => {
@@ -58,7 +46,6 @@ class AICO3DDashboard {
         });
         return clone;
     }
-
     init() {
         this.setupEventListeners();
         this.startClock();
@@ -67,21 +54,16 @@ class AICO3DDashboard {
         this.connectMQTT();
         this.startAIRotation();
         this.updateDeviceOverview();
-        this.startDemoData(); // Demo data for testing
-
+        this.startDemoData(); 
         console.log('AICO 3D Dashboard initialized');
     }
-
     startDemoData() {
-        // Generate demo data for all devices
         setInterval(() => {
             this.devices.forEach((device, index) => {
-                // Simulate different values for each device
                 const baseTemp = 22 + index * 2 + (Math.random() - 0.5) * 3;
                 const baseHumidity = 45 + index * 5 + (Math.random() - 0.5) * 5;
                 const baseCurrent = 2 + index * 0.5 + (Math.random() - 0.5) * 0.5;
                 const baseCO = 5 + index * 2 + Math.random() * 3;
-
                 this.updateDeviceSensor(index, 'temperature', baseTemp);
                 this.updateDeviceSensor(index, 'humidity', baseHumidity);
                 this.updateDeviceSensor(index, 'current', baseCurrent);
@@ -89,11 +71,9 @@ class AICO3DDashboard {
                 this.updateDeviceSensor(index, 'pressure', 1013 + Math.random() * 10);
                 this.updateDeviceSensor(index, 'air-quality', 30 + Math.random() * 20);
             });
-
             this.updateDeviceOverview();
             this.updateEnergyFlow();
             this.updateDashboardSummary();
-
             if (this.state.currentPage === 'analytics') {
                 this.updateAnalyticsChart();
                 this.updateMainGauge();
@@ -101,19 +81,13 @@ class AICO3DDashboard {
             }
         }, 2000);
     }
-
     updateDeviceSensor(deviceIndex, sensorId, value) {
         const device = this.devices[deviceIndex];
         if (!device || !device.sensors[sensorId]) return;
-
         const sensor = device.sensors[sensorId];
         sensor.current = value;
-
-        // Add to history
         sensor.history.push({ value, time: new Date() });
         if (sensor.history.length > 100) sensor.history.shift();
-
-        // Calculate status
         if (value >= sensor.thresholds.critical) {
             sensor.status = 'critical';
         } else if (value >= sensor.thresholds.warning) {
@@ -121,52 +95,36 @@ class AICO3DDashboard {
         } else {
             sensor.status = 'normal';
         }
-
-        // Update main sensors if this is the selected device
         if (deviceIndex === this.state.selectedDevice) {
             this.sensors[sensorId] = { ...this.sensors[sensorId], ...sensor };
             this.updateSensorUI(sensorId);
         }
     }
-
     setupEventListeners() {
-        // Navigation menu
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const page = e.currentTarget.dataset.page;
                 this.switchPage(page);
             });
         });
-
-        // Sensor card clicks
         document.querySelectorAll('.sensor-metric, .sensor-full-card').forEach(card => {
             card.addEventListener('click', () => {
                 const sensorId = card.dataset.sensor;
                 if (sensorId) this.showSensorModal(sensorId);
             });
         });
-
-        // Panel sensor clicks
         document.querySelectorAll('.panel-sensor').forEach(sensor => {
             sensor.addEventListener('click', () => {
                 const sensorId = sensor.dataset.sensor;
                 if (sensorId) this.showSensorModal(sensorId);
             });
         });
-
-        // Modal close
         document.getElementById('closeDetailModal')?.addEventListener('click', () => this.hideModal());
         document.querySelector('.modal-backdrop')?.addEventListener('click', () => this.hideModal());
-
-        // Scene controls
         document.getElementById('resetView')?.addEventListener('click', () => this.resetPanelView());
         document.getElementById('toggleGrid')?.addEventListener('click', () => this.toggleGrid());
-
-        // Activity navigation
         document.getElementById('prevWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
         document.getElementById('nextWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
-
-        // Alert filters
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -174,14 +132,9 @@ class AICO3DDashboard {
                 this.filterAlerts(e.target.dataset.filter);
             });
         });
-
         document.getElementById('clearAlerts')?.addEventListener('click', () => this.clearAlerts());
-
-        // Analytics selects
         document.getElementById('analyticsSensorSelect')?.addEventListener('change', () => this.updateAnalyticsChart());
         document.getElementById('analyticsTimeRange')?.addEventListener('change', () => this.updateAnalyticsChart());
-
-        // Device selector tabs (All Sensors & Analytics pages)
         document.querySelectorAll('#page-sensors .device-tab, #page-analytics .device-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const device = e.currentTarget.dataset.device;
@@ -195,8 +148,6 @@ class AICO3DDashboard {
                 e.currentTarget.classList.add('active');
             });
         });
-
-        // Dashboard device selector
         document.querySelectorAll('#dashboardDeviceSelector .device-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const device = parseInt(e.currentTarget.dataset.device);
@@ -206,16 +157,12 @@ class AICO3DDashboard {
                 this.updateDashboardForDevice(device);
             });
         });
-
-        // Device overview cards
         document.querySelectorAll('.device-overview-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const device = parseInt(e.currentTarget.dataset.device);
                 this.selectDevice(device);
             });
         });
-
-        // View toggle
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -227,8 +174,6 @@ class AICO3DDashboard {
                 }
             });
         });
-
-        // Sensor chips
         document.querySelectorAll('.sensor-chip').forEach(chip => {
             chip.addEventListener('click', (e) => {
                 document.querySelectorAll('.sensor-chip').forEach(c => c.classList.remove('active'));
@@ -237,100 +182,71 @@ class AICO3DDashboard {
                 this.updateAnalyticsChart();
             });
         });
-
-        // Keyboard
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.hideModal();
         });
     }
-
     selectDevice(deviceIndex) {
         this.state.selectedDevice = deviceIndex;
-
-        // Update device overview cards
         document.querySelectorAll('.device-overview-card').forEach(card => {
             card.classList.toggle('active', parseInt(card.dataset.device) === deviceIndex);
         });
-
-        // Copy device sensors to main sensors
         const device = this.devices[deviceIndex];
         if (device) {
             Object.keys(device.sensors).forEach(sensorId => {
                 this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
             });
         }
-
-        // Re-render sensors page
         this.renderAllSensorsPage();
         this.updateSystemStatus();
     }
-
     updateDashboardForDevice(deviceIndex) {
         const device = this.devices[deviceIndex];
         if (!device) return;
-
-        // Copy device sensors to main sensors for display
         Object.keys(device.sensors).forEach(sensorId => {
             this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
             this.updateSensorUI(sensorId);
             this.updateSensorSparkline(sensorId);
         });
-
         this.updateSystemStatus();
         this.updatePanelDisplay();
     }
-
     updateDashboardSummary() {
-        // Calculate total power
         let totalPower = 0;
         let totalTemp = 0;
         this.devices.forEach(device => {
             totalPower += device.sensors.current.current * 220;
             totalTemp += device.sensors.temperature.current;
         });
-
         const avgTemp = totalTemp / this.devices.length;
-
         const powerEl = document.getElementById('dashTotalPower');
         if (powerEl) powerEl.textContent = (totalPower / 1000).toFixed(2) + ' kW';
-
         const tempEl = document.getElementById('dashAvgTemp');
         if (tempEl) tempEl.textContent = avgTemp.toFixed(1) + '°C';
     }
-
     updateDeviceOverview() {
         this.devices.forEach((device, index) => {
-            // Calculate device health
             let normalCount = 0, warningCount = 0, criticalCount = 0;
             Object.values(device.sensors).forEach(sensor => {
                 if (sensor.status === 'critical') criticalCount++;
                 else if (sensor.status === 'warning') warningCount++;
                 else normalCount++;
             });
-
             const total = Object.keys(device.sensors).length;
             device.health = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-
-            // Update UI
             const healthEl = document.getElementById(`device${index}Health`);
             if (healthEl) healthEl.textContent = device.health + '%';
-
             const tempEl = document.getElementById(`device${index}Temp`);
             if (tempEl) tempEl.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
-
             const humidityEl = document.getElementById(`device${index}Humidity`);
             if (humidityEl) humidityEl.textContent = device.sensors.humidity.current.toFixed(0) + '%';
-
             const currentEl = document.getElementById(`device${index}Current`);
             if (currentEl) currentEl.textContent = device.sensors.current.current.toFixed(1) + 'A';
-
-            // Update health ring
             const ringProgress = document.querySelector(`.ring-progress[data-device="${index}"]`);
             if (ringProgress) {
                 const circumference = 94.2;
                 const offset = circumference - (device.health / 100) * circumference;
                 ringProgress.style.strokeDashoffset = offset;
-
                 if (criticalCount > 0) {
                     ringProgress.style.stroke = '#ef4444';
                 } else if (warningCount > 0) {
@@ -341,24 +257,16 @@ class AICO3DDashboard {
             }
         });
     }
-
     updateEnergyFlow() {
-        // Update flow visualization
         let totalPower = 0;
-
         this.devices.forEach((device, index) => {
             const current = device.sensors.current.current;
-            const power = current * 220; // Assuming 220V
+            const power = current * 220; 
             totalPower += power;
-
-            // Update flow values
             const currentEl = document.getElementById(`flowDevice${index}Current`);
             if (currentEl) currentEl.textContent = current.toFixed(1) + 'A';
-
             const powerEl = document.getElementById(`flowDevice${index}Power`);
             if (powerEl) powerEl.textContent = Math.round(power) + 'W';
-
-            // Update status dots
             const statusEl = document.getElementById(`status${index}`);
             if (statusEl) {
                 statusEl.classList.remove('normal', 'warning', 'critical');
@@ -370,68 +278,49 @@ class AICO3DDashboard {
                 statusEl.classList.add(status);
             }
         });
-
-        // Update total power
         const totalPowerEl = document.getElementById('totalPower');
         if (totalPowerEl) totalPowerEl.textContent = (totalPower / 1000).toFixed(2);
-
-        // Update sensor bars (using first device)
         const device = this.devices[0];
         const tempBar = document.getElementById('tempBar0');
         if (tempBar) {
             const tempPercent = Math.min(100, (device.sensors.temperature.current - 15) / (60 - 15) * 100);
             tempBar.setAttribute('width', tempPercent * 2);
         }
-
         const humidityBar = document.getElementById('humidityBar0');
         if (humidityBar) {
             const humidityPercent = Math.min(100, device.sensors.humidity.current);
             humidityBar.setAttribute('width', humidityPercent * 2);
         }
-
         const coBar = document.getElementById('coBar0');
         if (coBar) {
             const coPercent = Math.min(100, device.sensors.co.current / 50 * 100);
             coBar.setAttribute('width', coPercent * 2);
         }
-
-        // Update bar values
         const tempBarVal = document.getElementById('tempBarVal0');
         if (tempBarVal) tempBarVal.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
-
         const humidityBarVal = document.getElementById('humidityBarVal0');
         if (humidityBarVal) humidityBarVal.textContent = device.sensors.humidity.current.toFixed(0) + '%';
-
         const coBarVal = document.getElementById('coBarVal0');
         if (coBarVal) coBarVal.textContent = device.sensors.co.current.toFixed(1) + 'ppm';
     }
-
     updateMainGauge() {
-        // Calculate overall system health
         let totalHealth = 0;
         let normalDevices = 0, warningDevices = 0, criticalDevices = 0;
-
         this.devices.forEach(device => {
             totalHealth += device.health;
             if (device.health >= 90) normalDevices++;
             else if (device.health >= 70) warningDevices++;
             else criticalDevices++;
         });
-
         const avgHealth = Math.round(totalHealth / this.devices.length);
-
-        // Update gauge
         const gaugeProgress = document.getElementById('mainGaugeProgress');
         if (gaugeProgress) {
             const circumference = 534;
             const offset = circumference - (avgHealth / 100) * circumference;
             gaugeProgress.style.strokeDashoffset = offset;
         }
-
         const gaugeValue = document.getElementById('mainGaugeValue');
         if (gaugeValue) gaugeValue.textContent = avgHealth;
-
-        // Update status
         const statusEl = document.getElementById('systemStatus');
         if (statusEl) {
             if (criticalDevices > 0) {
@@ -445,67 +334,50 @@ class AICO3DDashboard {
                 statusEl.style.color = '#10b981';
             }
         }
-
-        // Update legend counts
         document.getElementById('normalDevices')?.textContent && (document.getElementById('normalDevices').textContent = normalDevices);
         document.getElementById('warningDevices')?.textContent && (document.getElementById('warningDevices').textContent = warningDevices);
         document.getElementById('criticalDevices')?.textContent && (document.getElementById('criticalDevices').textContent = criticalDevices);
-
-        // Update stats
         const avgTempEl = document.getElementById('avgTemp');
         const avgHumidityEl = document.getElementById('avgHumidity');
         const avgCurrentEl = document.getElementById('avgCurrent');
-
         if (avgTempEl) {
             const avgTemp = this.devices.reduce((sum, d) => sum + d.sensors.temperature.current, 0) / this.devices.length;
             avgTempEl.textContent = avgTemp.toFixed(1) + '°C';
         }
-
         if (avgHumidityEl) {
             const avgHumidity = this.devices.reduce((sum, d) => sum + d.sensors.humidity.current, 0) / this.devices.length;
             avgHumidityEl.textContent = avgHumidity.toFixed(0) + '%';
         }
-
         if (avgCurrentEl) {
             const totalCurrent = this.devices.reduce((sum, d) => sum + d.sensors.current.current, 0);
             avgCurrentEl.textContent = totalCurrent.toFixed(2) + 'A';
         }
     }
-
     renderMiniGauges() {
         const device = this.devices[this.state.selectedDevice] || this.devices[0];
-
         this.renderMiniGauge('tempMiniGauge', device.sensors.temperature, '#f59e0b');
         this.renderMiniGauge('humidityMiniGauge', device.sensors.humidity, '#00c8ff');
         this.renderMiniGauge('currentMiniGauge', device.sensors.current, '#eab308');
     }
-
     renderMiniGauge(canvasId, sensor, color) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
         const radius = 30;
-
         ctx.clearRect(0, 0, width, height);
-
-        // Background circle
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.lineWidth = 6;
         ctx.stroke();
-
-        // Progress arc
         const range = sensor.max - sensor.min;
         const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
         const startAngle = -Math.PI / 2;
         const endAngle = startAngle + normalized * Math.PI * 2;
-
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, startAngle, endAngle);
         ctx.strokeStyle = color;
@@ -513,42 +385,32 @@ class AICO3DDashboard {
         ctx.lineCap = 'round';
         ctx.stroke();
     }
-
     connectMQTT() {
-        // Check if mqtt.js created a client
         if (window.mqttClient) {
-            // Hook into existing MQTT client
             const originalUpdate = window.mqttClient.updateDashboardSensors;
             window.mqttClient.updateDashboardSensors = (data) => {
                 if (originalUpdate) originalUpdate.call(window.mqttClient, data);
                 this.handleMQTTData(data);
             };
-
-            // Check connection status
             if (window.mqttClient.client && window.mqttClient.client.isConnected()) {
                 this.setConnectionStatus(true);
             }
         } else {
-            // Create our own MQTT connection
             this.initOwnMQTT();
         }
     }
-
     initOwnMQTT() {
         try {
             const clientId = 'aico3d_' + Math.random().toString(16).substr(2, 8);
             const client = new Paho.MQTT.Client('213.142.151.191', 9001, clientId);
-
             client.onConnectionLost = (responseObject) => {
                 console.log('MQTT Connection lost:', responseObject.errorMessage);
                 this.setConnectionStatus(false);
                 setTimeout(() => this.initOwnMQTT(), 5000);
             };
-
             client.onMessageArrived = (message) => {
                 this.parseMQTTMessage(message.payloadString);
             };
-
             client.connect({
                 onSuccess: () => {
                     console.log('MQTT Connected');
@@ -561,22 +423,17 @@ class AICO3DDashboard {
                     setTimeout(() => this.initOwnMQTT(), 5000);
                 }
             });
-
             this.mqttClient = client;
         } catch (e) {
             console.error('MQTT Error:', e);
             this.setConnectionStatus(false);
         }
     }
-
     parseMQTTMessage(payload) {
         try {
-            // Format: A;temp;humidity;gas;air-quality;no2;co;tvoc;eco2;surface-temp1;surface-temp2;pressure;current;warning2;warning1;panelHealth;B
             if (!payload.startsWith('A;') || !payload.endsWith(';B')) return;
-
             const parts = payload.slice(2, -2).split(';');
             if (parts.length < 15) return;
-
             const data = {
                 temperature: parseFloat(parts[0]) || 0,
                 humidity: parseFloat(parts[1]) || 0,
@@ -594,45 +451,31 @@ class AICO3DDashboard {
                 warning1: parts[13] || '0',
                 panelHealth: parseFloat(parts[14]) || 0
             };
-
             this.handleMQTTData(data);
         } catch (e) {
             console.error('Parse error:', e);
         }
     }
-
     handleMQTTData(data) {
         this.state.lastUpdate = new Date();
-
-        // Update board health
         if (data.panelHealth !== undefined) {
             this.state.boardHealth = data.panelHealth;
             this.updateBoardHealth();
         }
-
-        // Update each sensor
         Object.keys(this.sensors).forEach(sensorId => {
             if (data[sensorId] !== undefined) {
                 this.updateSensor(sensorId, data[sensorId]);
             }
         });
-
-        // Update system status
         this.updateSystemStatus();
         this.updatePanelDisplay();
     }
-
     updateSensor(sensorId, value) {
         const sensor = this.sensors[sensorId];
         if (!sensor) return;
-
         sensor.current = value;
-
-        // Add to history
         sensor.history.push({ value, time: new Date() });
         if (sensor.history.length > 100) sensor.history.shift();
-
-        // Calculate status
         if (value >= sensor.thresholds.critical) {
             sensor.status = 'critical';
         } else if (value >= sensor.thresholds.warning) {
@@ -640,31 +483,20 @@ class AICO3DDashboard {
         } else {
             sensor.status = 'normal';
         }
-
-        // Update UI
         this.updateSensorUI(sensorId);
         this.updateSensorSparkline(sensorId);
-
-        // Check for alerts
         if (sensor.status !== 'normal') {
             this.addAlert(sensor);
         }
     }
-
     updateSensorUI(sensorId) {
         const sensor = this.sensors[sensorId];
-
-        // Update value display
         const valueEl = document.getElementById(`${sensorId}-card-value`);
         if (valueEl) valueEl.textContent = sensor.current.toFixed(1);
-
-        // Update status badge
         const statusEl = document.getElementById(`${sensorId}-card-status`);
         if (statusEl) {
             statusEl.innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
         }
-
-        // Update min/max
         if (sensor.history.length > 0) {
             const values = sensor.history.map(h => h.value);
             const minEl = document.getElementById(`${sensorId}-min`);
@@ -672,59 +504,43 @@ class AICO3DDashboard {
             if (minEl) minEl.textContent = Math.min(...values).toFixed(1);
             if (maxEl) maxEl.textContent = Math.max(...values).toFixed(1);
         }
-
-        // Update panel sensor
         const panelLabel = document.getElementById(`panel-${sensorId}`);
         if (panelLabel) panelLabel.textContent = sensor.current.toFixed(1);
-
         const panelSensor = document.querySelector(`.panel-sensor[data-sensor="${sensorId}"]`);
         if (panelSensor) {
             panelSensor.dataset.status = sensor.status;
         }
     }
-
     updateSensorSparkline(sensorId) {
         const sensor = this.sensors[sensorId];
         const container = document.getElementById(`${sensorId}-sparkline`);
         if (!container || sensor.history.length < 2) return;
-
         const data = sensor.history.slice(-30).map(h => h.value);
         const width = container.offsetWidth || 200;
         const height = container.offsetHeight || 40;
         const padding = 3;
-
         const min = Math.min(...data);
         const max = Math.max(...data);
         const range = max - min || 1;
-
-        // Calculate points
         const points = data.map((v, i) => ({
             x: (i / (data.length - 1)) * width,
             y: height - padding - ((v - min) / range) * (height - padding * 2)
         }));
-
-        // Create smooth bezier path
         let pathD = `M ${points[0].x} ${points[0].y}`;
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = i > 0 ? points[i - 1] : points[0];
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = i < points.length - 2 ? points[i + 2] : p2;
-
             const cp1x = p1.x + (p2.x - p0.x) / 6;
             const cp1y = p1.y + (p2.y - p0.y) / 6;
             const cp2x = p2.x - (p3.x - p1.x) / 6;
             const cp2y = p2.y - (p3.y - p1.y) / 6;
-
             pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
         }
-
-        // Create fill path
         const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
-
         const color = this.getSensorColor(sensorId);
         const lastPoint = points[points.length - 1];
-
         container.innerHTML = `
             <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                 <defs>
@@ -748,7 +564,6 @@ class AICO3DDashboard {
             </svg>
         `;
     }
-
     getSensorColor(sensorId) {
         const colors = {
             temperature: '#ff6b35',
@@ -766,38 +581,27 @@ class AICO3DDashboard {
         };
         return colors[sensorId] || '#00d4ff';
     }
-
     updateSystemStatus() {
         let normalCount = 0, warningCount = 0, criticalCount = 0;
-
         Object.values(this.sensors).forEach(sensor => {
             if (sensor.status === 'critical') criticalCount++;
             else if (sensor.status === 'warning') warningCount++;
             else normalCount++;
         });
-
-        // Update counts
         document.getElementById('normalSensorCount').textContent = normalCount;
         document.getElementById('warningSensorCount').textContent = warningCount;
         document.getElementById('criticalSensorCount').textContent = criticalCount;
-
         document.getElementById('onlineSensors').textContent = Object.keys(this.sensors).length;
         document.getElementById('warningCount').textContent = warningCount;
         document.getElementById('criticalCount').textContent = criticalCount;
-
-        // Calculate health percentage
         const total = Object.keys(this.sensors).length;
         const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-
         document.getElementById('healthPercent').textContent = healthPercent;
-
-        // Update ring
         const ring = document.getElementById('healthRingProgress');
         if (ring) {
             const circumference = 2 * Math.PI * 52;
             const offset = circumference - (healthPercent / 100) * circumference;
             ring.style.strokeDashoffset = offset;
-
             if (criticalCount > 0) {
                 ring.style.stroke = '#ff3b5c';
             } else if (warningCount > 0) {
@@ -806,8 +610,6 @@ class AICO3DDashboard {
                 ring.style.stroke = '#00ff88';
             }
         }
-
-        // Update status indicator
         const indicator = document.getElementById('systemStatusIndicator');
         if (indicator) {
             if (criticalCount > 0) {
@@ -818,19 +620,15 @@ class AICO3DDashboard {
                 indicator.innerHTML = '<span class="status-dot active"></span><span>Active</span>';
             }
         }
-
-        // Update LEDs
         document.getElementById('ledWarning')?.classList.toggle('active', warningCount > 0);
         document.getElementById('ledCritical')?.classList.toggle('active', criticalCount > 0);
     }
-
     updateBoardHealth() {
         const display = document.getElementById('boardHealthDisplay');
         if (display) {
             display.textContent = this.state.boardHealth.toFixed(2) + '%';
         }
     }
-
     updatePanelDisplay() {
         const currentSensor = this.sensors.current;
         const display = document.getElementById('panelCurrentDisplay');
@@ -838,7 +636,6 @@ class AICO3DDashboard {
             display.textContent = currentSensor.current.toFixed(1);
         }
     }
-
     setConnectionStatus(connected) {
         this.state.mqttConnected = connected;
         const statusEl = document.getElementById('connectionStatus');
@@ -847,22 +644,14 @@ class AICO3DDashboard {
             statusEl.querySelector('span').textContent = connected ? 'MQTT Connected' : 'MQTT Disconnected';
         }
     }
-
-    // Page Navigation
     switchPage(page) {
         this.state.currentPage = page;
-
-        // Update menu
         document.querySelectorAll('.menu-item').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
-
-        // Update pages
         document.querySelectorAll('.page').forEach(p => {
             p.classList.toggle('active', p.id === `page-${page}`);
         });
-
-        // Update title
         const titles = {
             dashboard: 'Dashboard',
             sensors: 'All Sensors',
@@ -871,8 +660,6 @@ class AICO3DDashboard {
         };
         document.getElementById('pageTitle').textContent = titles[page] || page;
         document.getElementById('breadcrumbPage').textContent = titles[page] || page;
-
-        // Page-specific updates
         if (page === 'analytics') {
             this.updateAnalyticsChart();
             this.updateEnergyFlow();
@@ -885,17 +672,13 @@ class AICO3DDashboard {
             this.renderAlertsList();
         }
     }
-
-    // All Sensors Page - Premium Design
     renderAllSensorsPage() {
         const grid = document.getElementById('allSensorsGrid');
         if (!grid) return;
-
         grid.innerHTML = Object.values(this.sensors).map(sensor => {
             const minVal = sensor.history.length > 0 ? Math.min(...sensor.history.map(h => h.value)).toFixed(1) : '--';
             const maxVal = sensor.history.length > 0 ? Math.max(...sensor.history.map(h => h.value)).toFixed(1) : '--';
             const avgVal = sensor.history.length > 0 ? (sensor.history.reduce((a, b) => a + b.value, 0) / sensor.history.length).toFixed(1) : '--';
-
             return `
                 <div class="sensor-full-card glass-card" data-sensor="${sensor.id}" data-status="${sensor.status}">
                     <div class="sensor-card-header">
@@ -935,21 +718,16 @@ class AICO3DDashboard {
                 </div>
             `;
         }).join('');
-
-        // Add click handlers
         grid.querySelectorAll('.sensor-full-card').forEach(card => {
             card.addEventListener('click', () => {
                 const sensorId = card.dataset.sensor;
                 if (sensorId) this.showSensorModal(sensorId);
             });
         });
-
-        // Update sparklines
         Object.keys(this.sensors).forEach(sensorId => {
             this.updateFullSensorSparkline(sensorId);
         });
     }
-
     getSensorCategory(sensorId) {
         const categories = {
             temperature: 'Environmental',
@@ -967,53 +745,40 @@ class AICO3DDashboard {
         };
         return categories[sensorId] || 'Sensor';
     }
-
     updateFullSensorSparkline(sensorId) {
         const sensor = this.sensors[sensorId];
         const container = document.getElementById(`${sensorId}-full-sparkline`);
         if (!container || sensor.history.length < 2) return;
-
         const data = sensor.history.slice(-40).map(h => h.value);
         const width = container.offsetWidth || 280;
         const height = container.offsetHeight || 50;
         const padding = 4;
-
         const min = Math.min(...data);
         const max = Math.max(...data);
         const range = max - min || 1;
-
-        // Calculate points
         const points = data.map((v, i) => ({
             x: (i / (data.length - 1)) * width,
             y: height - padding - ((v - min) / range) * (height - padding * 2)
         }));
-
-        // Create smooth bezier path
         let pathD = `M ${points[0].x} ${points[0].y}`;
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = i > 0 ? points[i - 1] : points[0];
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = i < points.length - 2 ? points[i + 2] : p2;
-
             const cp1x = p1.x + (p2.x - p0.x) / 6;
             const cp1y = p1.y + (p2.y - p0.y) / 6;
             const cp2x = p2.x - (p3.x - p1.x) / 6;
             const cp2y = p2.y - (p3.y - p1.y) / 6;
-
             pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
         }
-
-        // Create fill path
         const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
-
         const color = this.getSensorColor(sensorId);
         const lastPoint = points[points.length - 1];
         const lastValue = data[data.length - 1];
         const status = lastValue >= sensor.thresholds.critical ? 'critical' :
                       lastValue >= sensor.thresholds.warning ? 'warning' : 'normal';
         const dotColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : color;
-
         container.innerHTML = `
             <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                 <defs>
@@ -1039,14 +804,10 @@ class AICO3DDashboard {
             </svg>
         `;
     }
-
-    // Activity Chart
     renderActivityChart() {
         const container = document.getElementById('activityChart');
         if (!container) return;
-
         const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
         container.innerHTML = days.map(day => {
             const dots = Array(24).fill(null).map(() => {
                 const rand = Math.random();
@@ -1056,7 +817,6 @@ class AICO3DDashboard {
                 else if (rand > 0.15) status = 'normal';
                 return `<div class="activity-dot ${status}"></div>`;
             }).join('');
-
             return `
                 <div class="day-column">
                     <span class="day-label">${day}</span>
@@ -1065,28 +825,22 @@ class AICO3DDashboard {
             `;
         }).join('');
     }
-
-    // Premium Analytics Chart with Bezier Curves and Animations
     updateAnalyticsChart() {
         const canvas = document.getElementById('analyticsCanvas');
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         const sensorId = this.state.selectedSensor || 'temperature';
         const device = this.devices[this.state.selectedDevice] || this.devices[0];
         const sensor = device ? device.sensors[sensorId] : this.sensors[sensorId];
         const count = parseInt(document.getElementById('analyticsTimeRange')?.value || '50');
-
         let data = sensor.history.slice(-count).map(h => h.value);
         if (data.length < 2) {
-            // Generate smooth sample data if no history
             for (let i = 0; i < count; i++) {
                 const t = i / count;
                 const wave = Math.sin(t * Math.PI * 4) * 0.2 + Math.sin(t * Math.PI * 7) * 0.1;
                 data.push(sensor.min + (sensor.max - sensor.min) * (0.3 + wave + Math.random() * 0.1));
             }
         }
-
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.parentElement.getBoundingClientRect();
         canvas.width = rect.width * dpr;
@@ -1094,60 +848,37 @@ class AICO3DDashboard {
         canvas.style.width = rect.width + 'px';
         canvas.style.height = rect.height + 'px';
         ctx.scale(dpr, dpr);
-
         const width = rect.width;
         const height = rect.height;
         const padding = { top: 30, right: 30, bottom: 40, left: 55 };
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
-
         const min = Math.min(...data) * 0.95;
         const max = Math.max(...data) * 1.05;
         const range = max - min || 1;
-
-        // Clear with subtle gradient background
         const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
         bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
         bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
-
-        // Draw premium grid
         this.drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height);
-
-        // Calculate bezier points for smooth curve
         const points = data.map((v, i) => ({
             x: padding.left + (i / (data.length - 1)) * chartWidth,
             y: padding.top + ((max - v) / range) * chartHeight
         }));
-
-        // Draw gradient fill under curve
         const color = this.getSensorColor(sensorId);
         this.drawChartGradientFill(ctx, points, color, padding, height);
-
-        // Draw smooth bezier curve with glow
         this.drawBezierCurve(ctx, points, color);
-
-        // Draw data points with animation
         this.drawDataPoints(ctx, points, color, data, sensor);
-
-        // Draw threshold lines if applicable
         this.drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range);
-
-        // Update stats
         this.updateChartStats(sensor, sensorId);
-
         document.getElementById('totalAlerts').textContent = this.state.alerts.length;
     }
-
     drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height) {
         const gridLines = 6;
-
-        // Horizontal grid lines with gradient
         for (let i = 0; i <= gridLines; i++) {
             const y = padding.top + (i / gridLines) * chartHeight;
             const alpha = i === 0 || i === gridLines ? 0.15 : 0.06;
-
             ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`;
             ctx.lineWidth = i === 0 || i === gridLines ? 1 : 0.5;
             ctx.setLineDash(i === 0 || i === gridLines ? [] : [4, 4]);
@@ -1156,28 +887,21 @@ class AICO3DDashboard {
             ctx.lineTo(width - padding.right, y);
             ctx.stroke();
             ctx.setLineDash([]);
-
-            // Value labels with glow
             const val = max - (i / gridLines) * range;
             ctx.font = '600 11px Inter';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.textAlign = 'right';
             ctx.fillText(val.toFixed(1), padding.left - 10, y + 4);
         }
-
-        // Vertical grid lines (time markers)
         const vLines = 8;
         for (let i = 0; i <= vLines; i++) {
             const x = padding.left + (i / vLines) * chartWidth;
-
             ctx.strokeStyle = 'rgba(0, 200, 255, 0.04)';
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(x, padding.top);
             ctx.lineTo(x, height - padding.bottom);
             ctx.stroke();
-
-            // Time labels
             if (i % 2 === 0) {
                 ctx.font = '500 10px Inter';
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
@@ -1187,22 +911,16 @@ class AICO3DDashboard {
             }
         }
     }
-
     drawChartGradientFill(ctx, points, color, padding, height) {
         if (points.length < 2) return;
-
-        // Create multi-stop gradient for premium fill
         const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
         gradient.addColorStop(0, this.hexToRgba(color, 0.35));
         gradient.addColorStop(0.3, this.hexToRgba(color, 0.2));
         gradient.addColorStop(0.7, this.hexToRgba(color, 0.08));
         gradient.addColorStop(1, this.hexToRgba(color, 0));
-
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.moveTo(points[0].x, height - padding.bottom);
-
-        // Use bezier curves for smooth fill
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = points[i];
             const p1 = points[i + 1];
@@ -1214,38 +932,28 @@ class AICO3DDashboard {
         ctx.closePath();
         ctx.fill();
     }
-
     drawBezierCurve(ctx, points, color) {
         if (points.length < 2) return;
-
-        // Glow effect layer
         ctx.shadowColor = color;
         ctx.shadowBlur = 15;
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-
-        // Draw smooth bezier curve through all points
         for (let i = 0; i < points.length - 1; i++) {
             const p0 = i > 0 ? points[i - 1] : points[0];
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = i < points.length - 2 ? points[i + 2] : p2;
-
             const cp1x = p1.x + (p2.x - p0.x) / 6;
             const cp1y = p1.y + (p2.y - p0.y) / 6;
             const cp2x = p2.x - (p3.x - p1.x) / 6;
             const cp2y = p2.y - (p3.y - p1.y) / 6;
-
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
         }
         ctx.stroke();
-
-        // Secondary line for more vibrant look
         ctx.shadowBlur = 0;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 1;
@@ -1256,68 +964,47 @@ class AICO3DDashboard {
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = i < points.length - 2 ? points[i + 2] : p2;
-
             const cp1x = p1.x + (p2.x - p0.x) / 6;
             const cp1y = p1.y + (p2.y - p0.y) / 6;
             const cp2x = p2.x - (p3.x - p1.x) / 6;
             const cp2y = p2.y - (p3.y - p1.y) / 6;
-
             ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
         }
         ctx.stroke();
     }
-
     drawDataPoints(ctx, points, color, data, sensor) {
-        // Only draw points for visible data (every nth point to avoid clutter)
         const step = Math.max(1, Math.floor(points.length / 15));
-
         points.forEach((point, i) => {
             if (i % step !== 0 && i !== points.length - 1) return;
-
             const isLast = i === points.length - 1;
             const value = data[i];
             const status = value >= sensor.thresholds.critical ? 'critical' :
                           value >= sensor.thresholds.warning ? 'warning' : 'normal';
-
-            // Point glow
             ctx.shadowColor = isLast ? color : 'transparent';
             ctx.shadowBlur = isLast ? 20 : 0;
-
-            // Outer ring
             ctx.beginPath();
             ctx.arc(point.x, point.y, isLast ? 8 : 5, 0, Math.PI * 2);
             ctx.fillStyle = status === 'critical' ? '#ef4444' :
                            status === 'warning' ? '#f59e0b' :
                            this.hexToRgba(color, 0.2);
             ctx.fill();
-
-            // Inner dot
             ctx.beginPath();
             ctx.arc(point.x, point.y, isLast ? 4 : 2.5, 0, Math.PI * 2);
             ctx.fillStyle = isLast ? '#fff' : color;
             ctx.fill();
-
             ctx.shadowBlur = 0;
-
-            // Value tooltip for last point
             if (isLast) {
                 const tooltipWidth = 60;
                 const tooltipHeight = 28;
                 const tooltipX = point.x - tooltipWidth / 2;
                 const tooltipY = point.y - tooltipHeight - 15;
-
-                // Tooltip background
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.beginPath();
                 ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 6);
                 ctx.fill();
-
-                // Tooltip border
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 1;
                 ctx.stroke();
-
-                // Tooltip text
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 12px Inter';
                 ctx.textAlign = 'center';
@@ -1325,12 +1012,9 @@ class AICO3DDashboard {
             }
         });
     }
-
     drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range) {
-        // Warning threshold line
         if (sensor.thresholds.warning >= min && sensor.thresholds.warning <= max) {
             const y = padding.top + ((max - sensor.thresholds.warning) / range) * chartHeight;
-
             ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 4]);
@@ -1339,18 +1023,13 @@ class AICO3DDashboard {
             ctx.lineTo(padding.left + chartWidth, y);
             ctx.stroke();
             ctx.setLineDash([]);
-
-            // Label
             ctx.fillStyle = '#f59e0b';
             ctx.font = '600 9px Inter';
             ctx.textAlign = 'left';
             ctx.fillText('WARNING', padding.left + chartWidth + 5, y + 3);
         }
-
-        // Critical threshold line
         if (sensor.thresholds.critical >= min && sensor.thresholds.critical <= max) {
             const y = padding.top + ((max - sensor.thresholds.critical) / range) * chartHeight;
-
             ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 4]);
@@ -1359,22 +1038,18 @@ class AICO3DDashboard {
             ctx.lineTo(padding.left + chartWidth, y);
             ctx.stroke();
             ctx.setLineDash([]);
-
-            // Label
             ctx.fillStyle = '#ef4444';
             ctx.font = '600 9px Inter';
             ctx.textAlign = 'left';
             ctx.fillText('CRITICAL', padding.left + chartWidth + 5, y + 3);
         }
     }
-
     updateChartStats(sensor, sensorId) {
         if (sensor.history.length > 0) {
             const values = sensor.history.map(h => h.value);
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
             const minVal = Math.min(...values);
             const maxVal = Math.max(...values);
-
             if (sensorId === 'temperature') {
                 document.getElementById('avgTemp')?.textContent && (document.getElementById('avgTemp').textContent = avg.toFixed(1) + '°C');
                 document.getElementById('tempRange')?.textContent && (document.getElementById('tempRange').textContent = `${minVal.toFixed(1)} ~ ${maxVal.toFixed(1)}°C`);
@@ -1387,9 +1062,7 @@ class AICO3DDashboard {
             }
         }
     }
-
     hexToRgba(hex, alpha) {
-        // Handle named colors or hex
         const colors = {
             '#ff6b35': `rgba(255, 107, 53, ${alpha})`,
             '#00d4ff': `rgba(0, 212, 255, ${alpha})`,
@@ -1406,7 +1079,6 @@ class AICO3DDashboard {
         };
         return colors[hex] || `rgba(0, 200, 255, ${alpha})`;
     }
-
     renderGauges() {
         this.renderGauge('tempGauge', this.sensors.temperature);
         this.renderGauge('humidityGauge', this.sensors.humidity);
@@ -1415,144 +1087,102 @@ class AICO3DDashboard {
         this.renderSystemHealthGauge();
         this.renderSensorSummary();
     }
-
     renderGauge(canvasId, sensor) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height - 20;
         const radius = 75;
-
         ctx.clearRect(0, 0, width, height);
-
-        // Background arc with gradient
         const bgGradient = ctx.createLinearGradient(0, 0, width, 0);
         bgGradient.addColorStop(0, 'rgba(255,255,255,0.05)');
         bgGradient.addColorStop(1, 'rgba(255,255,255,0.1)');
-
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
         ctx.strokeStyle = bgGradient;
         ctx.lineWidth = 12;
         ctx.stroke();
-
-        // Value arc
         const range = sensor.max - sensor.min;
         const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
         const endAngle = Math.PI + normalized * Math.PI;
-
         let color = '#10b981';
         if (sensor.status === 'warning') color = '#f59e0b';
         else if (sensor.status === 'critical') color = '#ef4444';
-
-        // Glow effect
         ctx.shadowColor = color;
         ctx.shadowBlur = 15;
-
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, Math.PI, endAngle, false);
         ctx.strokeStyle = color;
         ctx.lineWidth = 12;
         ctx.lineCap = 'round';
         ctx.stroke();
-
         ctx.shadowBlur = 0;
-
-        // Value text
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 24px Inter';
         ctx.textAlign = 'center';
         ctx.fillText(sensor.current.toFixed(1), centerX, centerY - 15);
-
         ctx.fillStyle = 'rgba(248,250,252,0.5)';
         ctx.font = '12px Inter';
         ctx.fillText(sensor.unit, centerX, centerY + 5);
     }
-
     renderSystemHealthGauge() {
         const canvas = document.getElementById('systemHealthGauge');
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
         const radius = 90;
-
         ctx.clearRect(0, 0, width, height);
-
-        // Calculate health percentage
         let normalCount = 0, warningCount = 0, criticalCount = 0;
         Object.values(this.sensors).forEach(sensor => {
             if (sensor.status === 'critical') criticalCount++;
             else if (sensor.status === 'warning') warningCount++;
             else normalCount++;
         });
-
         const total = Object.keys(this.sensors).length;
         const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-
-        // Update display value
         const valueEl = document.getElementById('systemHealthValue');
         if (valueEl) valueEl.textContent = healthPercent;
-
-        // Background circle
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, false);
         ctx.strokeStyle = 'rgba(255,255,255,0.08)';
         ctx.lineWidth = 16;
         ctx.stroke();
-
-        // Progress arc
         const startAngle = -Math.PI / 2;
         const endAngle = startAngle + (healthPercent / 100) * Math.PI * 2;
-
         let color = '#10b981';
         if (healthPercent < 50) color = '#ef4444';
         else if (healthPercent < 75) color = '#f59e0b';
-
-        // Gradient for arc
         const gradient = ctx.createLinearGradient(0, 0, width, height);
         gradient.addColorStop(0, '#00c8ff');
         gradient.addColorStop(1, '#7c3aed');
-
-        // Glow effect
         ctx.shadowColor = color;
         ctx.shadowBlur = 20;
-
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
         ctx.strokeStyle = healthPercent >= 75 ? gradient : color;
         ctx.lineWidth = 16;
         ctx.lineCap = 'round';
         ctx.stroke();
-
         ctx.shadowBlur = 0;
-
-        // Inner decorative circle
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius - 25, 0, Math.PI * 2, false);
         ctx.strokeStyle = 'rgba(255,255,255,0.03)';
         ctx.lineWidth = 1;
         ctx.stroke();
     }
-
     renderSensorSummary() {
         const grid = document.getElementById('sensorSummaryGrid');
         if (!grid) return;
-
-        // Show top 6 sensors
         const topSensors = ['temperature', 'humidity', 'co', 'current', 'air-quality', 'pressure'];
-
         grid.innerHTML = topSensors.map(sensorId => {
             const sensor = this.sensors[sensorId];
             if (!sensor) return '';
-
             return `
                 <div class="sensor-summary-item" data-sensor="${sensorId}">
                     <div class="summary-icon sensor-icon ${sensor.iconClass}">
@@ -1565,8 +1195,6 @@ class AICO3DDashboard {
                 </div>
             `;
         }).join('');
-
-        // Add click handlers
         grid.querySelectorAll('.sensor-summary-item').forEach(item => {
             item.addEventListener('click', () => {
                 const sensorId = item.dataset.sensor;
@@ -1574,8 +1202,6 @@ class AICO3DDashboard {
             });
         });
     }
-
-    // Alerts
     addAlert(sensor) {
         const alert = {
             id: Date.now(),
@@ -1587,38 +1213,26 @@ class AICO3DDashboard {
             message: `${sensor.name} ${sensor.status === 'critical' ? 'kritik seviyede' : 'uyarı seviyesinde'}: ${sensor.current.toFixed(1)}${sensor.unit}`,
             time: new Date()
         };
-
-        // Avoid duplicates
         const recent = this.state.alerts.find(a =>
             a.sensorId === alert.sensorId &&
             Date.now() - a.time.getTime() < 30000
         );
         if (recent) return;
-
         this.state.alerts.unshift(alert);
         if (this.state.alerts.length > 50) this.state.alerts.pop();
-
-        // Update badge
         document.getElementById('sidebarAlertCount').textContent = this.state.alerts.length;
-
-        // Show toast
         this.showToast(alert);
-
-        // Update alerts page if visible
         if (this.state.currentPage === 'alerts') {
             this.renderAlertsList();
         }
     }
-
     renderAlertsList(filter = 'all') {
         const container = document.getElementById('alertsListFull');
         if (!container) return;
-
         let alerts = this.state.alerts;
         if (filter !== 'all') {
             alerts = alerts.filter(a => a.type === filter);
         }
-
         if (alerts.length === 0) {
             container.innerHTML = `
                 <div class="no-alerts">
@@ -1628,7 +1242,6 @@ class AICO3DDashboard {
             `;
             return;
         }
-
         container.innerHTML = alerts.map(alert => `
             <div class="alert-item ${alert.type}">
                 <div class="alert-icon">
@@ -1642,24 +1255,18 @@ class AICO3DDashboard {
             </div>
         `).join('');
     }
-
     filterAlerts(filter) {
         this.renderAlertsList(filter);
     }
-
     clearAlerts() {
         this.state.alerts = [];
         document.getElementById('sidebarAlertCount').textContent = '0';
         this.renderAlertsList();
     }
-
-    // Modal
     showSensorModal(sensorId) {
         const sensor = this.sensors[sensorId];
         if (!sensor) return;
-
         const modal = document.getElementById('sensorDetailModal');
-
         document.getElementById('modalSensorIcon').innerHTML = `<i class="fas ${sensor.icon}"></i>`;
         document.getElementById('modalSensorName').textContent = sensor.name;
         document.getElementById('modalSensorType').textContent = sensor.id;
@@ -1668,21 +1275,15 @@ class AICO3DDashboard {
         document.getElementById('modalSensorStatus').innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
         document.getElementById('modalWarningThreshold').textContent = sensor.thresholds.warning + sensor.unit;
         document.getElementById('modalCriticalThreshold').textContent = sensor.thresholds.critical + sensor.unit;
-
-        // Render history chart
         this.renderModalChart(sensor);
-
         modal.classList.add('show');
     }
-
     renderModalChart(sensor) {
         const canvas = document.getElementById('modalHistoryChart');
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.parentElement.offsetWidth;
         canvas.height = 200;
-
         const data = sensor.history.map(h => h.value);
         if (data.length < 2) {
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
@@ -1691,23 +1292,17 @@ class AICO3DDashboard {
             ctx.fillText('Henüz yeterli veri yok', canvas.width / 2, 100);
             return;
         }
-
         const padding = 30;
         const width = canvas.width - padding * 2;
         const height = canvas.height - padding * 2;
-
         const min = Math.min(...data);
         const max = Math.max(...data);
         const range = max - min || 1;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw line
         const color = this.getSensorColor(sensor.id);
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.beginPath();
-
         data.forEach((v, i) => {
             const x = padding + (i / (data.length - 1)) * width;
             const y = padding + ((max - v) / range) * height;
@@ -1716,16 +1311,12 @@ class AICO3DDashboard {
         });
         ctx.stroke();
     }
-
     hideModal() {
         document.getElementById('sensorDetailModal')?.classList.remove('show');
     }
-
-    // Toast
     showToast(alert) {
         const container = document.getElementById('toastContainer');
         if (!container) return;
-
         const toast = document.createElement('div');
         toast.className = `toast ${alert.type}`;
         toast.innerHTML = `
@@ -1735,16 +1326,12 @@ class AICO3DDashboard {
                 <div class="toast-message">${alert.message}</div>
             </div>
         `;
-
         container.appendChild(toast);
-
         setTimeout(() => {
             toast.style.animation = 'toastSlideIn 0.3s ease-out reverse';
             setTimeout(() => toast.remove(), 300);
         }, 5000);
     }
-
-    // Utilities
     startClock() {
         const update = () => {
             const now = new Date();
@@ -1753,14 +1340,12 @@ class AICO3DDashboard {
         update();
         setInterval(update, 1000);
     }
-
     startAIRotation() {
         let index = 0;
         const update = () => {
             const text = this.aiMessages[index];
             const el = document.getElementById('aiAnalysisText');
             const timeEl = document.getElementById('aiAnalysisTime');
-
             if (el) {
                 el.style.opacity = '0';
                 setTimeout(() => {
@@ -1771,21 +1356,17 @@ class AICO3DDashboard {
             if (timeEl) {
                 timeEl.textContent = `${Math.floor(Math.random() * 5) + 1} dk önce`;
             }
-
             index = (index + 1) % this.aiMessages.length;
         };
-
         update();
         setInterval(update, 15000);
     }
-
     resetPanelView() {
         const cabinet = document.querySelector('.panel-cabinet');
         if (cabinet) {
             cabinet.style.transform = 'translate(-50%, -50%) rotateX(5deg) rotateY(-5deg)';
         }
     }
-
     toggleGrid() {
         const grid = document.getElementById('sceneGrid');
         if (grid) {
@@ -1793,13 +1374,10 @@ class AICO3DDashboard {
             this.state.gridVisible = !this.state.gridVisible;
         }
     }
-
     formatTime(date) {
         return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     }
 }
-
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.aico3D = new AICO3DDashboard();
 });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AICO - 3D Fire Detection System</title>
-    <link rel="stylesheet" href="3d-dashboard.css">
+    <link rel="stylesheet" href="src/css/dashboard.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,7 +14,6 @@
 </head>
 <body>
     <div class="dashboard-3d">
-        <!-- Sidebar Navigation -->
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -28,7 +27,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="sidebar-menu">
                 <button class="menu-item active" data-page="dashboard">
                     <i class="fas fa-th-large"></i>
@@ -48,7 +46,6 @@
                     <span class="alert-badge" id="sidebarAlertCount">0</span>
                 </button>
             </div>
-
             <div class="sidebar-footer">
                 <div class="connection-status" id="connectionStatus">
                     <div class="status-dot"></div>
@@ -57,10 +54,7 @@
                 <div class="system-time" id="systemTime">--:--:--</div>
             </div>
         </nav>
-
-        <!-- Main Content Area -->
         <main class="main-area">
-            <!-- Top Bar -->
             <header class="top-bar">
                 <div class="top-left">
                     <h1 class="page-title" id="pageTitle">Dashboard</h1>
@@ -96,10 +90,7 @@
                     </div>
                 </div>
             </header>
-
-            <!-- Page: Dashboard -->
             <div class="page active" id="page-dashboard">
-                <!-- Device Selector for Dashboard -->
                 <div class="page-toolbar glass-card dashboard-toolbar">
                     <div class="toolbar-left">
                         <div class="device-selector" id="dashboardDeviceSelector">
@@ -135,11 +126,8 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="dashboard-grid">
-                    <!-- Left Column: Key Metrics -->
                     <div class="metrics-column">
-                        <!-- System Health Card -->
                         <div class="metric-card glass-card system-health-card">
                             <div class="card-header">
                                 <span class="card-title">System Status</span>
@@ -178,8 +166,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Primary Sensors -->
                         <div class="metric-card glass-card sensor-metric" data-sensor="temperature">
                             <div class="sensor-header">
                                 <div class="sensor-icon temp">
@@ -203,7 +189,6 @@
                             </div>
                             <div class="mini-sparkline" id="temp-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="humidity">
                             <div class="sensor-header">
                                 <div class="sensor-icon humidity">
@@ -227,7 +212,6 @@
                             </div>
                             <div class="mini-sparkline" id="humidity-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="co">
                             <div class="sensor-header">
                                 <div class="sensor-icon co">
@@ -252,8 +236,6 @@
                             <div class="mini-sparkline" id="co-sparkline"></div>
                         </div>
                     </div>
-
-                    <!-- Center: 3D Electrical Panel Scene -->
                     <div class="scene-column">
                         <div class="scene-container glass-card">
                             <div class="scene-header">
@@ -267,20 +249,14 @@
                                     </button>
                                 </div>
                             </div>
-
                             <div class="electrical-panel-scene" id="panelScene">
-                                <!-- 3D Panel Structure -->
                                 <div class="panel-3d">
-                                    <!-- Panel Cabinet -->
                                     <div class="panel-cabinet">
                                         <div class="cabinet-front">
-                                            <!-- Panel Door -->
                                             <div class="panel-door">
                                                 <div class="door-handle"></div>
                                                 <div class="door-window">
-                                                    <!-- Inside Panel View -->
                                                     <div class="panel-interior">
-                                                        <!-- Circuit Breakers Row 1 -->
                                                         <div class="breaker-row">
                                                             <div class="breaker active"></div>
                                                             <div class="breaker active"></div>
@@ -289,7 +265,6 @@
                                                             <div class="breaker active"></div>
                                                             <div class="breaker active"></div>
                                                         </div>
-                                                        <!-- Circuit Breakers Row 2 -->
                                                         <div class="breaker-row">
                                                             <div class="breaker active"></div>
                                                             <div class="breaker active"></div>
@@ -298,14 +273,12 @@
                                                             <div class="breaker active"></div>
                                                             <div class="breaker active"></div>
                                                         </div>
-                                                        <!-- Main Meter Display -->
                                                         <div class="meter-display">
                                                             <div class="meter-screen">
                                                                 <span class="meter-value" id="panelCurrentDisplay">0.0</span>
                                                                 <span class="meter-unit">A</span>
                                                             </div>
                                                         </div>
-                                                        <!-- Status LEDs -->
                                                         <div class="status-leds">
                                                             <div class="led green active" title="Power"></div>
                                                             <div class="led yellow" id="ledWarning" title="Warning"></div>
@@ -318,48 +291,37 @@
                                         <div class="cabinet-side"></div>
                                         <div class="cabinet-top"></div>
                                     </div>
-
-                                    <!-- Sensor Positions on Panel -->
                                     <div class="panel-sensor" data-sensor="temperature" style="--pos-x: 20%; --pos-y: 15%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">TEMP<br><span id="panel-temp">--</span>°C</div>
                                     </div>
-
                                     <div class="panel-sensor" data-sensor="humidity" style="--pos-x: 80%; --pos-y: 15%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">HUM<br><span id="panel-humidity">--</span>%</div>
                                     </div>
-
                                     <div class="panel-sensor" data-sensor="gas" style="--pos-x: 15%; --pos-y: 50%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">GAS<br><span id="panel-gas">--</span>Ω</div>
                                     </div>
-
                                     <div class="panel-sensor" data-sensor="surface-temp" style="--pos-x: 85%; --pos-y: 50%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">SURF<br><span id="panel-surface">--</span>°C</div>
                                     </div>
-
                                     <div class="panel-sensor" data-sensor="current" style="--pos-x: 50%; --pos-y: 85%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">CURR<br><span id="panel-current">--</span>A</div>
                                     </div>
-
                                     <div class="panel-sensor" data-sensor="co" style="--pos-x: 25%; --pos-y: 85%;">
                                         <div class="sensor-pulse"></div>
                                         <div class="sensor-dot"></div>
                                         <div class="sensor-label">CO<br><span id="panel-co">--</span>ppm</div>
                                     </div>
-
-                                    <!-- Grid Overlay -->
                                     <div class="scene-grid" id="sceneGrid"></div>
-
-                                    <!-- Connection Lines -->
                                     <svg class="connection-svg" viewBox="0 0 400 350">
                                         <defs>
                                             <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -377,8 +339,6 @@
                                     </svg>
                                 </div>
                             </div>
-
-                            <!-- AI Analysis -->
                             <div class="ai-analysis">
                                 <div class="ai-icon">
                                     <i class="fas fa-brain"></i>
@@ -388,8 +348,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Right Column: More Sensors -->
                     <div class="sensors-column">
                         <div class="metric-card glass-card sensor-metric" data-sensor="gas">
                             <div class="sensor-header">
@@ -410,7 +368,6 @@
                             </div>
                             <div class="mini-sparkline" id="gas-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="air-quality">
                             <div class="sensor-header">
                                 <div class="sensor-icon air">
@@ -430,7 +387,6 @@
                             </div>
                             <div class="mini-sparkline" id="air-quality-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="surface-temp">
                             <div class="sensor-header">
                                 <div class="sensor-icon surface">
@@ -450,7 +406,6 @@
                             </div>
                             <div class="mini-sparkline" id="surface-temp-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="current">
                             <div class="sensor-header">
                                 <div class="sensor-icon current">
@@ -470,7 +425,6 @@
                             </div>
                             <div class="mini-sparkline" id="current-sparkline"></div>
                         </div>
-
                         <div class="metric-card glass-card sensor-metric" data-sensor="pressure">
                             <div class="sensor-header">
                                 <div class="sensor-icon pressure">
@@ -492,8 +446,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Bottom Activity Chart -->
                 <div class="activity-section glass-card">
                     <div class="activity-header">
                         <h3>Sensor Activity / Week</h3>
@@ -512,10 +464,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Page: All Sensors -->
             <div class="page" id="page-sensors">
-                <!-- Device Selector Bar -->
                 <div class="page-toolbar glass-card">
                     <div class="toolbar-left">
                         <div class="device-selector">
@@ -549,8 +498,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Device Overview Cards -->
                 <div class="device-overview-row" id="deviceOverviewRow">
                     <div class="device-overview-card glass-card active" data-device="0">
                         <div class="device-card-header">
@@ -661,16 +608,10 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Sensors Grid -->
                 <div class="sensors-page-grid" id="allSensorsGrid">
-                    <!-- Generated by JS -->
                 </div>
             </div>
-
-            <!-- Page: Analytics -->
             <div class="page" id="page-analytics">
-                <!-- Analytics Toolbar -->
                 <div class="page-toolbar glass-card">
                     <div class="toolbar-left">
                         <div class="device-selector">
@@ -704,9 +645,7 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="analytics-grid">
-                    <!-- Energy Flow Visualization -->
                     <div class="energy-flow-card glass-card">
                         <div class="flow-header">
                             <div class="flow-title">
@@ -722,21 +661,16 @@
                         </div>
                         <div class="energy-flow-visual" id="energyFlowVisual">
                             <svg class="flow-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
-                                <!-- Input Source -->
                                 <g class="flow-source">
                                     <rect x="20" y="60" width="120" height="80" rx="8" class="source-box"/>
                                     <text x="80" y="95" class="source-label">INPUT</text>
                                     <text x="80" y="115" class="source-value" id="flowInputValue">220V</text>
                                 </g>
-
-                                <!-- Flow Lines -->
                                 <g class="flow-lines">
                                     <path class="flow-line active" d="M140,100 Q200,100 250,60" id="flowLine1"/>
                                     <path class="flow-line active" d="M140,100 L250,100" id="flowLine2"/>
                                     <path class="flow-line active" d="M140,100 Q200,100 250,140" id="flowLine3"/>
                                 </g>
-
-                                <!-- Device Nodes -->
                                 <g class="flow-node" data-device="0">
                                     <circle cx="300" cy="60" r="30" class="node-circle"/>
                                     <text x="300" y="55" class="node-icon">&#xf2db;</text>
@@ -758,33 +692,25 @@
                                     <text x="360" y="135" class="node-value" id="flowDevice2Current">0.0A</text>
                                     <text x="360" y="155" class="node-power" id="flowDevice2Power">0W</text>
                                 </g>
-
-                                <!-- Output Lines -->
                                 <g class="flow-lines output">
                                     <path class="flow-line" d="M430,60 L500,60" id="outLine1"/>
                                     <path class="flow-line" d="M430,100 L500,100" id="outLine2"/>
                                     <path class="flow-line" d="M430,140 L500,140" id="outLine3"/>
                                 </g>
-
-                                <!-- Status Indicators -->
                                 <g class="status-indicators">
                                     <circle cx="520" cy="60" r="8" class="status-dot normal" id="status0"/>
                                     <circle cx="520" cy="100" r="8" class="status-dot normal" id="status1"/>
                                     <circle cx="520" cy="140" r="8" class="status-dot normal" id="status2"/>
                                 </g>
-
-                                <!-- Sensor Bars -->
                                 <g class="sensor-bars">
                                     <rect x="550" y="45" width="200" height="30" rx="4" class="bar-bg"/>
                                     <rect x="550" y="45" width="0" height="30" rx="4" class="bar-fill temp" id="tempBar0"/>
                                     <text x="560" y="65" class="bar-label">TEMP</text>
                                     <text x="740" y="65" class="bar-value" id="tempBarVal0">--°C</text>
-
                                     <rect x="550" y="85" width="200" height="30" rx="4" class="bar-bg"/>
                                     <rect x="550" y="85" width="0" height="30" rx="4" class="bar-fill humidity" id="humidityBar0"/>
                                     <text x="560" y="105" class="bar-label">HUM</text>
                                     <text x="740" y="105" class="bar-value" id="humidityBarVal0">--%</text>
-
                                     <rect x="550" y="125" width="200" height="30" rx="4" class="bar-bg"/>
                                     <rect x="550" y="125" width="0" height="30" rx="4" class="bar-fill co" id="coBar0"/>
                                     <text x="560" y="145" class="bar-label">CO</text>
@@ -793,8 +719,6 @@
                             </svg>
                         </div>
                     </div>
-
-                    <!-- Main Chart Section -->
                     <div class="chart-card glass-card full-width">
                         <div class="chart-header">
                             <h3>Sensor Trends</h3>
@@ -819,10 +743,7 @@
                             <canvas id="analyticsCanvas"></canvas>
                         </div>
                     </div>
-
-                    <!-- Device Comparison Section -->
                     <div class="comparison-section">
-                        <!-- Big Gauge -->
                         <div class="big-gauge-card glass-card">
                             <div class="big-gauge-header">
                                 <h4>System Health</h4>
@@ -862,8 +783,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Quick Stats -->
                         <div class="quick-stats-grid">
                             <div class="quick-stat-card glass-card temp">
                                 <div class="stat-visual">
@@ -911,8 +830,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Page: Alerts -->
             <div class="page" id="page-alerts">
                 <div class="alerts-page">
                     <div class="alerts-filters glass-card">
@@ -935,8 +852,6 @@
             </div>
         </main>
     </div>
-
-    <!-- Sensor Detail Modal -->
     <div class="modal" id="sensorDetailModal">
         <div class="modal-backdrop"></div>
         <div class="modal-content glass-card">
@@ -975,10 +890,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
-
-    <script src="3d-dashboard.js"></script>
+    <script src="src/js/dashboard.js"></script>
 </body>
 </html>
