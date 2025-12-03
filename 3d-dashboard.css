@@ -10,52 +10,66 @@
 }
 
 :root {
-    /* Primary Colors - Matching existing system */
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #11111a;
-    --bg-tertiary: #1a1a2e;
-    --bg-card: rgba(26, 26, 46, 0.8);
+    /* Primary Colors - Premium Dark Theme */
+    --bg-primary: #08090c;
+    --bg-secondary: #0d0f14;
+    --bg-tertiary: #141820;
+    --bg-card: rgba(20, 24, 32, 0.85);
+    --bg-elevated: #1a1f2b;
 
-    /* Accent Colors */
-    --accent-blue: #00d4ff;
-    --accent-purple: #6366f1;
-    --accent-green: #00ff88;
-    --accent-orange: #ff6b35;
-    --accent-red: #ff3b5c;
-    --accent-yellow: #ffd700;
+    /* Accent Colors - Refined Palette */
+    --accent-primary: #00c8ff;
+    --accent-blue: #00c8ff;
+    --accent-purple: #7c3aed;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-yellow: #eab308;
+    --accent-cyan: #06b6d4;
+    --accent-amber: #f59e0b;
 
     /* Gradient Presets */
-    --gradient-primary: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-    --gradient-success: linear-gradient(135deg, var(--accent-green), #00cc70);
-    --gradient-warning: linear-gradient(135deg, var(--accent-orange), #ff5722);
-    --gradient-danger: linear-gradient(135deg, var(--accent-red), #dc2626);
+    --gradient-primary: linear-gradient(135deg, #00c8ff 0%, #7c3aed 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    --gradient-info: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    --gradient-surface: linear-gradient(145deg, #1a1f2b 0%, #0d0f14 100%);
+    --gradient-glow: linear-gradient(180deg, rgba(0, 200, 255, 0.15) 0%, transparent 100%);
 
-    /* Glass Effect */
-    --glass-bg: rgba(26, 26, 46, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-highlight: rgba(255, 255, 255, 0.05);
+    /* Glass Effect - Enhanced */
+    --glass-bg: rgba(20, 24, 32, 0.75);
+    --glass-bg-light: rgba(30, 36, 48, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-light: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.03);
 
     /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.8);
-    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-primary: #f8fafc;
+    --text-secondary: rgba(248, 250, 252, 0.75);
+    --text-muted: rgba(248, 250, 252, 0.45);
+    --text-accent: #00c8ff;
 
-    /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 30px rgba(0, 212, 255, 0.3);
+    /* Shadows - Premium */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 40px rgba(0, 200, 255, 0.25);
+    --shadow-glow-strong: 0 0 60px rgba(0, 200, 255, 0.4);
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
     /* Borders & Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
+    --radius-2xl: 32px;
 
     /* Transitions */
     --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Base Styles */
@@ -71,7 +85,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Background Effects */
+/* Background Effects - Premium Ambient */
 body::before {
     content: '';
     position: fixed;
@@ -80,29 +94,42 @@ body::before {
     width: 100%;
     height: 100%;
     background:
-        radial-gradient(circle at 20% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255, 59, 92, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 60%, rgba(0, 255, 136, 0.05) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 60% at 10% 10%, rgba(0, 200, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 90% 90%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
     pointer-events: none;
     z-index: -1;
-    animation: backgroundPulse 8s ease-in-out infinite;
+    animation: backgroundPulse 12s ease-in-out infinite;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(180deg, transparent 0%, rgba(8, 9, 12, 0.3) 100%);
+    pointer-events: none;
+    z-index: -1;
 }
 
 @keyframes backgroundPulse {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
 }
 
 /* ============================================
-   Glass Card Effect
+   Glass Card Effect - Premium
    ============================================ */
 .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
     position: relative;
     overflow: hidden;
 }
@@ -114,7 +141,24 @@ body::before {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 70%, transparent 100%);
+}
+
+.glass-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-glow);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    pointer-events: none;
+}
+
+.glass-card:hover::after {
+    opacity: 0.5;
 }
 
 /* ============================================
@@ -596,14 +640,17 @@ body::before {
     flex-shrink: 0;
 }
 
-.sensor-icon.temp { background: var(--gradient-warning); }
-.sensor-icon.humidity { background: var(--gradient-primary); }
-.sensor-icon.co { background: var(--gradient-danger); }
-.sensor-icon.gas { background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange)); }
-.sensor-icon.air { background: linear-gradient(135deg, var(--accent-purple), #9333ea); }
-.sensor-icon.surface { background: linear-gradient(135deg, #8a2be2, #ff1493); }
-.sensor-icon.current { background: linear-gradient(135deg, #ffc107, #ffff00); }
-.sensor-icon.pressure { background: linear-gradient(135deg, #6c757d, #adb5bd); }
+.sensor-icon.temp { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.sensor-icon.humidity { background: linear-gradient(135deg, #00c8ff 0%, #0891b2 100%); }
+.sensor-icon.co { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+.sensor-icon.gas { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); }
+.sensor-icon.air { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); }
+.sensor-icon.surface { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+.sensor-icon.current { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+.sensor-icon.pressure { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+.sensor-icon.tvoc { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.sensor-icon.eco2 { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+.sensor-icon.no2 { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); }
 
 .sensor-info {
     flex: 1;
@@ -1294,80 +1341,269 @@ body::before {
 .legend-item .dot.inactive { background: var(--bg-tertiary); }
 
 /* ============================================
-   All Sensors Page
+   All Sensors Page - Premium Design
    ============================================ */
 .sensors-page-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
 }
 
 .sensor-full-card {
-    padding: 1.5rem;
+    padding: 0;
     cursor: pointer;
     transition: var(--transition-normal);
+    overflow: hidden;
+    background: var(--gradient-surface);
+    border: 1px solid var(--glass-border);
 }
 
 .sensor-full-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(1.01);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
+    border-color: var(--glass-border-light);
+}
+
+.sensor-full-card .sensor-card-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(0, 200, 255, 0.05) 0%, transparent 100%);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sensor-full-card .sensor-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+.sensor-full-card .sensor-icon::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: inherit;
+    filter: blur(10px);
+    opacity: 0.4;
+    z-index: -1;
+}
+
+.sensor-full-card .sensor-card-body {
+    padding: 1.5rem;
+}
+
+.sensor-full-card .sensor-value-display {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.sensor-full-card .sensor-value-display .big-value {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.sensor-full-card .sensor-value-display .value-unit {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.sensor-full-card .sensor-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.sensor-full-card .sensor-stat {
+    text-align: center;
+}
+
+.sensor-full-card .sensor-stat-label {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.sensor-full-card .sensor-stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sensor-full-card .sensor-chart-container {
+    height: 60px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.sensor-full-card .sensor-threshold-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-green);
+    transition: background var(--transition-fast);
+}
+
+.sensor-full-card[data-status="warning"] .sensor-threshold-indicator {
+    background: var(--accent-orange);
+}
+
+.sensor-full-card[data-status="critical"] .sensor-threshold-indicator {
+    background: var(--accent-red);
+    animation: pulseBar 1s ease-in-out infinite;
+}
+
+@keyframes pulseBar {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Premium Status Badge for Sensors Page */
+.sensor-full-card .status-indicator-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    margin-left: auto;
+    box-shadow: 0 0 12px var(--accent-green);
+    animation: statusGlow 2s ease-in-out infinite;
+}
+
+.sensor-full-card[data-status="warning"] .status-indicator-dot {
+    background: var(--accent-orange);
+    box-shadow: 0 0 12px var(--accent-orange);
+}
+
+.sensor-full-card[data-status="critical"] .status-indicator-dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 12px var(--accent-red);
+    animation: criticalGlow 0.5s ease-in-out infinite;
+}
+
+@keyframes statusGlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
 }
 
 /* ============================================
-   Analytics Page
+   Analytics Page - Premium Design
    ============================================ */
 .analytics-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+/* Analytics Overview Section */
+.analytics-overview {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
     gap: 1.5rem;
 }
 
 .chart-card {
-    padding: 1.5rem;
+    padding: 0;
+    overflow: hidden;
 }
 
 .chart-card.full-width {
     width: 100%;
 }
 
+.chart-card-inner {
+    padding: 1.5rem;
+}
+
 .chart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: linear-gradient(90deg, rgba(0, 200, 255, 0.03) 0%, transparent 100%);
 }
 
 .chart-header h3 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chart-header h3::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
 }
 
 .chart-controls {
     display: flex;
     gap: 0.75rem;
+    align-items: center;
 }
 
 .chart-select {
-    padding: 0.5rem 1rem;
+    padding: 0.625rem 1rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--glass-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: var(--text-primary);
     font-size: 0.8125rem;
     cursor: pointer;
+    transition: var(--transition-fast);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23f8fafc' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+}
+
+.chart-select:hover {
+    border-color: var(--accent-blue);
+    background-color: var(--bg-elevated);
 }
 
 .chart-select:focus {
     outline: none;
     border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.15);
 }
 
 .large-chart {
-    height: 300px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: var(--radius-md);
+    height: 320px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+    border-radius: 0;
     position: relative;
+    padding: 1rem;
 }
 
 .large-chart canvas {
@@ -1375,72 +1611,240 @@ body::before {
     height: 100% !important;
 }
 
+/* Stats Row - Premium Cards */
 .stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .stat-card {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--gradient-surface);
+    border: 1px solid var(--glass-border);
+    transition: var(--transition-normal);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--glass-border-light);
 }
 
 .stat-card .stat-icon {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     background: var(--gradient-primary);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: 1.375rem;
     color: white;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(0, 200, 255, 0.25);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: var(--gradient-info);
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: var(--gradient-warning);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: var(--gradient-danger);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
 }
 
 .stat-card .stat-content {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
 }
 
 .stat-card .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
     color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -0.02em;
 }
 
 .stat-card .stat-label {
     font-size: 0.75rem;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
+/* Gauges Row - Premium Design */
 .gauges-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .gauge-card {
-    padding: 1.25rem;
+    padding: 1.5rem;
     text-align: center;
+    background: var(--gradient-surface);
+    border: 1px solid var(--glass-border);
+    transition: var(--transition-normal);
+}
+
+.gauge-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
 .gauge-card h4 {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .gauge-container {
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 .gauge-container canvas {
     max-width: 100%;
+}
+
+/* Energy Flow Section */
+.energy-flow-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.flow-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.flow-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+}
+
+.flow-card-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.flow-card-header h4::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: var(--gradient-warning);
+    border-radius: 2px;
+}
+
+.flow-card-body {
+    padding: 1.5rem;
+}
+
+/* Sensor Summary in Analytics */
+.sensor-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.sensor-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    transition: var(--transition-fast);
+}
+
+.sensor-summary-item:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.sensor-summary-item .summary-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+}
+
+.sensor-summary-item .summary-info {
+    flex: 1;
+}
+
+.sensor-summary-item .summary-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.sensor-summary-item .summary-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-accent);
+}
+
+/* Big Circular Gauge */
+.big-gauge-container {
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.big-gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.big-gauge-value .value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.big-gauge-value .unit {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+}
+
+.big-gauge-label {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 /* ============================================
@@ -1870,6 +2274,14 @@ body::before {
 
     .stats-row,
     .gauges-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .energy-flow-section {
+        grid-template-columns: 1fr;
+    }
+
+    .sensor-summary-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
