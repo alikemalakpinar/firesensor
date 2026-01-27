@@ -1,555 +1,764 @@
-class AICO3DDashboard {
+/**
+ * AICO Fire Detection System - Premium Industrial Dashboard
+ * Digital Twin & Engineering Precision Theme
+ * Three.js 3D Visualization + HUD Interface
+ */
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = {
+    colors: {
+        deepCarbon: 0x0b0c10,
+        darkSlate: 0x1f2833,
+        accentTeal: 0x45a29e,
+        accentCyan: 0x66fcf1,
+        warning: 0xff9f1c,
+        critical: 0xe63946,
+        normal: 0x45a29e,
+        wireframe: 0x45a29e,
+        grid: 0x1a2634
+    },
+    bootSequence: {
+        duration: 3500,
+        messages: [
+            'Initializing core systems...',
+            'Loading sensor modules...',
+            'Establishing MQTT connection...',
+            'Calibrating Digital Twin...',
+            'Rendering 3D environment...',
+            'Loading UI components...',
+            'System ready.'
+        ]
+    },
+    oscilloscope: {
+        maxPoints: 60,
+        lineWidth: 2,
+        glowIntensity: 15
+    },
+    threejs: {
+        buildingWidth: 12,
+        buildingHeight: 8,
+        buildingDepth: 10,
+        floorCount: 3
+    }
+};
+
+// ============================================================================
+// BOOT SEQUENCE
+// ============================================================================
+
+class BootSequence {
     constructor() {
-        this.sensors = {
-            temperature: { id: 'temperature', name: 'Temperature', unit: '°C', icon: 'fa-thermometer-half', iconClass: 'temp', current: 0, history: [], status: 'normal', thresholds: { warning: 35, critical: 45 }, min: 15, max: 60 },
-            humidity: { id: 'humidity', name: 'Humidity', unit: '%', icon: 'fa-droplet', iconClass: 'humidity', current: 0, history: [], status: 'normal', thresholds: { warning: 70, critical: 85 }, min: 20, max: 85 },
-            'air-quality': { id: 'air-quality', name: 'Air Quality', unit: 'AQI', icon: 'fa-smog', iconClass: 'air', current: 0, history: [], status: 'normal', thresholds: { warning: 50, critical: 100 }, min: 0, max: 200 },
-            gas: { id: 'gas', name: 'Gas Resistance', unit: 'Ω', icon: 'fa-wind', iconClass: 'gas', current: 0, history: [], status: 'normal', thresholds: { warning: 300, critical: 500 }, min: 50, max: 800 },
-            'surface-temp': { id: 'surface-temp', name: 'Surface Temp', unit: '°C', icon: 'fa-temperature-high', iconClass: 'surface', current: 0, history: [], status: 'normal', thresholds: { warning: 60, critical: 80 }, min: 18, max: 90 },
-            'surface-temp-2': { id: 'surface-temp-2', name: 'Surface Temp 2', unit: '°C', icon: 'fa-temperature-high', iconClass: 'surface', current: 0, history: [], status: 'normal', thresholds: { warning: 60, critical: 80 }, min: 18, max: 90 },
-            tvoc: { id: 'tvoc', name: 'TVOC', unit: 'ppb', icon: 'fa-atom', iconClass: 'tvoc', current: 0, history: [], status: 'normal', thresholds: { warning: 660, critical: 2200 }, min: 0, max: 2000 },
-            eco2: { id: 'eco2', name: 'eCO2', unit: 'ppm', icon: 'fa-leaf', iconClass: 'eco2', current: 0, history: [], status: 'normal', thresholds: { warning: 1000, critical: 2000 }, min: 400, max: 5000 },
-            no2: { id: 'no2', name: 'NO2', unit: 'ppb', icon: 'fa-cloud', iconClass: 'no2', current: 0, history: [], status: 'normal', thresholds: { warning: 50, critical: 100 }, min: 0, max: 200 },
-            co: { id: 'co', name: 'Carbon Monoxide', unit: 'ppm', icon: 'fa-skull-crossbones', iconClass: 'co', current: 0, history: [], status: 'normal', thresholds: { warning: 25, critical: 50 }, min: 0, max: 100 },
-            pressure: { id: 'pressure', name: 'Pressure', unit: 'hPa', icon: 'fa-gauge-high', iconClass: 'pressure', current: 0, history: [], status: 'normal', thresholds: { warning: 1050, critical: 1080 }, min: 900, max: 1100 },
-            current: { id: 'current', name: 'Current', unit: 'A', icon: 'fa-bolt', iconClass: 'current', current: 0, history: [], status: 'normal', thresholds: { warning: 5, critical: 8 }, min: 0, max: 10 }
-        };
-        this.state = {
-            currentPage: 'dashboard',
-            mqttConnected: false,
-            boardHealth: 0,
-            alerts: [],
-            lastUpdate: null,
-            gridVisible: true,
-            selectedDevice: 0,
-            selectedSensor: 'temperature'
-        };
-        this.devices = [
-            { id: 0, name: 'AICO Panel #1', location: 'Ana Pano', online: true, health: 100, sensors: this.cloneSensors() },
-            { id: 1, name: 'AICO Panel #2', location: 'Yedek Pano', online: true, health: 100, sensors: this.cloneSensors() },
-            { id: 2, name: 'AICO Panel #3', location: 'Dış Pano', online: true, health: 100, sensors: this.cloneSensors() }
-        ];
-        this.aiMessages = [
-            "Tüm sensörler normal parametrelerde çalışıyor. Yangın riski tespit edilmedi.",
-            "Panel sıcaklığı stabil. Soğutma sistemi verimli çalışıyor.",
-            "Elektrik akımı normal seviyelerde. Aşırı yük tespit edilmedi.",
-            "Hava kalitesi iyi. Duman veya gaz sızıntısı yok.",
-            "Nem seviyesi kabul edilebilir aralıkta.",
-            "Tüm devreler aktif ve çalışır durumda."
-        ];
-        this.init();
+        this.overlay = document.getElementById('bootOverlay');
+        this.progressBar = document.getElementById('bootProgress');
+        this.statusText = document.getElementById('bootStatus');
+        this.logContainer = document.getElementById('bootLog');
+        this.progress = 0;
+        this.messageIndex = 0;
     }
-    cloneSensors() {
-        const clone = {};
-        Object.keys(this.sensors).forEach(key => {
-            clone[key] = { ...this.sensors[key], history: [], current: 0, status: 'normal' };
+
+    start() {
+        return new Promise((resolve) => {
+            const totalDuration = CONFIG.bootSequence.duration;
+            const messageInterval = totalDuration / CONFIG.bootSequence.messages.length;
+
+            const progressInterval = setInterval(() => {
+                this.progress += 2;
+                if (this.progressBar) {
+                    this.progressBar.style.width = `${Math.min(this.progress, 100)}%`;
+                }
+
+                if (this.progress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, totalDuration / 50);
+
+            const messageTimer = setInterval(() => {
+                if (this.messageIndex < CONFIG.bootSequence.messages.length) {
+                    this.addLogMessage(CONFIG.bootSequence.messages[this.messageIndex]);
+                    if (this.statusText) {
+                        this.statusText.textContent = CONFIG.bootSequence.messages[this.messageIndex].toUpperCase();
+                    }
+                    this.messageIndex++;
+                } else {
+                    clearInterval(messageTimer);
+                }
+            }, messageInterval);
+
+            setTimeout(() => {
+                this.complete();
+                resolve();
+            }, totalDuration);
         });
-        return clone;
     }
+
+    addLogMessage(message) {
+        if (!this.logContainer) return;
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+        const logLine = document.createElement('div');
+        logLine.className = 'boot-log-line';
+        logLine.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-msg">${message}</span>`;
+        this.logContainer.appendChild(logLine);
+        this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    }
+
+    complete() {
+        if (this.overlay) {
+            this.overlay.classList.add('fade-out');
+            setTimeout(() => {
+                this.overlay.style.display = 'none';
+            }, 500);
+        }
+    }
+}
+
+// ============================================================================
+// THREE.JS DIGITAL TWIN
+// ============================================================================
+
+class DigitalTwin {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.canvas = document.getElementById('threejsCanvas');
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.building = null;
+        this.sensorNodes = new Map();
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.isInitialized = false;
+        this.animationId = null;
+        this.tooltip = document.getElementById('sensorTooltip');
+
+        if (this.container && this.canvas && typeof THREE !== 'undefined') {
+            this.init();
+        }
+    }
+
     init() {
-        this.setupEventListeners();
-        this.startClock();
-        this.renderActivityChart();
-        this.renderAllSensorsPage();
-        this.connectMQTT();
-        this.startAIRotation();
-        this.updateDeviceOverview();
-        this.startDemoData(); 
-        console.log('AICO 3D Dashboard initialized');
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+
+        // Scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(CONFIG.colors.deepCarbon);
+        this.scene.fog = new THREE.Fog(CONFIG.colors.deepCarbon, 20, 60);
+
+        // Camera - Isometric view
+        this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        this.camera.position.set(20, 15, 20);
+        this.camera.lookAt(0, 2, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            alpha: true
+        });
+        this.renderer.setSize(width, height);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Lights
+        this.setupLights();
+
+        // Grid
+        this.createGrid();
+
+        // Building
+        this.createBuilding();
+
+        // Sensor Nodes
+        this.createSensorNodes();
+
+        // Events
+        this.setupEvents();
+
+        // Animation
+        this.isInitialized = true;
+        this.animate();
     }
-    startDemoData() {
-        setInterval(() => {
-            this.devices.forEach((device, index) => {
-                const baseTemp = 22 + index * 2 + (Math.random() - 0.5) * 3;
-                const baseHumidity = 45 + index * 5 + (Math.random() - 0.5) * 5;
-                const baseCurrent = 2 + index * 0.5 + (Math.random() - 0.5) * 0.5;
-                const baseCO = 5 + index * 2 + Math.random() * 3;
-                this.updateDeviceSensor(index, 'temperature', baseTemp);
-                this.updateDeviceSensor(index, 'humidity', baseHumidity);
-                this.updateDeviceSensor(index, 'current', baseCurrent);
-                this.updateDeviceSensor(index, 'co', baseCO);
-                this.updateDeviceSensor(index, 'pressure', 1013 + Math.random() * 10);
-                this.updateDeviceSensor(index, 'air-quality', 30 + Math.random() * 20);
+
+    setupLights() {
+        // Ambient
+        const ambient = new THREE.AmbientLight(0x404040, 0.5);
+        this.scene.add(ambient);
+
+        // Main directional
+        const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+        directional.position.set(10, 20, 10);
+        directional.castShadow = true;
+        directional.shadow.mapSize.width = 2048;
+        directional.shadow.mapSize.height = 2048;
+        this.scene.add(directional);
+
+        // Accent light (teal)
+        const tealLight = new THREE.PointLight(CONFIG.colors.accentTeal, 1, 30);
+        tealLight.position.set(-5, 10, 5);
+        this.scene.add(tealLight);
+
+        // Rim light
+        const rimLight = new THREE.PointLight(0x66fcf1, 0.5, 40);
+        rimLight.position.set(15, 5, -10);
+        this.scene.add(rimLight);
+    }
+
+    createGrid() {
+        const gridHelper = new THREE.GridHelper(40, 40, CONFIG.colors.accentTeal, CONFIG.colors.grid);
+        gridHelper.position.y = -0.01;
+        gridHelper.material.opacity = 0.3;
+        gridHelper.material.transparent = true;
+        this.scene.add(gridHelper);
+
+        // Ground plane with subtle glow
+        const groundGeometry = new THREE.PlaneGeometry(50, 50);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: CONFIG.colors.deepCarbon,
+            transparent: true,
+            opacity: 0.8,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.02;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+    }
+
+    createBuilding() {
+        const { buildingWidth, buildingHeight, buildingDepth, floorCount } = CONFIG.threejs;
+        this.building = new THREE.Group();
+
+        // Main structure - wireframe style
+        const mainGeometry = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingDepth);
+
+        // Solid interior (dark, semi-transparent)
+        const solidMaterial = new THREE.MeshPhongMaterial({
+            color: CONFIG.colors.darkSlate,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const solidMesh = new THREE.Mesh(mainGeometry, solidMaterial);
+        solidMesh.position.y = buildingHeight / 2;
+        this.building.add(solidMesh);
+
+        // Wireframe edges
+        const edgesGeometry = new THREE.EdgesGeometry(mainGeometry);
+        const edgesMaterial = new THREE.LineBasicMaterial({
+            color: CONFIG.colors.accentTeal,
+            transparent: true,
+            opacity: 0.8
+        });
+        const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+        edges.position.y = buildingHeight / 2;
+        this.building.add(edges);
+
+        // Floor separators
+        const floorHeight = buildingHeight / floorCount;
+        for (let i = 1; i < floorCount; i++) {
+            const floorGeometry = new THREE.PlaneGeometry(buildingWidth - 0.2, buildingDepth - 0.2);
+            const floorMaterial = new THREE.MeshBasicMaterial({
+                color: CONFIG.colors.accentTeal,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
             });
-            this.updateDeviceOverview();
-            this.updateEnergyFlow();
-            this.updateDashboardSummary();
-            if (this.state.currentPage === 'analytics') {
-                this.updateAnalyticsChart();
-                this.updateMainGauge();
-                this.renderMiniGauges();
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = i * floorHeight;
+            this.building.add(floor);
+
+            // Floor edge lines
+            const floorEdge = new THREE.EdgesGeometry(floorGeometry);
+            const floorEdgeLine = new THREE.LineSegments(
+                floorEdge,
+                new THREE.LineBasicMaterial({ color: CONFIG.colors.accentCyan, transparent: true, opacity: 0.5 })
+            );
+            floorEdgeLine.rotation.x = -Math.PI / 2;
+            floorEdgeLine.position.y = i * floorHeight;
+            this.building.add(floorEdgeLine);
+        }
+
+        // Corner pillars with glow effect
+        const pillarPositions = [
+            [-buildingWidth/2 + 0.3, 0, -buildingDepth/2 + 0.3],
+            [buildingWidth/2 - 0.3, 0, -buildingDepth/2 + 0.3],
+            [-buildingWidth/2 + 0.3, 0, buildingDepth/2 - 0.3],
+            [buildingWidth/2 - 0.3, 0, buildingDepth/2 - 0.3]
+        ];
+
+        pillarPositions.forEach(pos => {
+            const pillarGeometry = new THREE.CylinderGeometry(0.15, 0.15, buildingHeight, 8);
+            const pillarMaterial = new THREE.MeshPhongMaterial({
+                color: CONFIG.colors.accentCyan,
+                emissive: CONFIG.colors.accentTeal,
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.7
+            });
+            const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            pillar.position.set(pos[0], buildingHeight / 2, pos[2]);
+            this.building.add(pillar);
+        });
+
+        this.scene.add(this.building);
+    }
+
+    createSensorNodes() {
+        const sensorPositions = {
+            'temperature': { x: -3, y: 6, z: 2, floor: 2 },
+            'humidity': { x: 3, y: 6, z: -2, floor: 2 },
+            'gas': { x: 0, y: 4, z: 0, floor: 1 },
+            'air-quality': { x: -4, y: 4, z: -3, floor: 1 },
+            'no2': { x: 4, y: 2, z: 3, floor: 0 },
+            'co': { x: -2, y: 2, z: -4, floor: 0 },
+            'tvoc': { x: 2, y: 6, z: 3, floor: 2 },
+            'eco2': { x: -4, y: 4, z: 3, floor: 1 },
+            'surface-temp': { x: 0, y: 2, z: -3, floor: 0 },
+            'surface-temp-2': { x: 3, y: 4, z: 0, floor: 1 },
+            'pressure': { x: -3, y: 2, z: 2, floor: 0 },
+            'current': { x: 4, y: 6, z: -3, floor: 2 }
+        };
+
+        Object.entries(sensorPositions).forEach(([sensorId, pos]) => {
+            const node = this.createSensorNode(sensorId, pos);
+            this.sensorNodes.set(sensorId, node);
+            this.building.add(node.group);
+        });
+    }
+
+    createSensorNode(sensorId, position) {
+        const group = new THREE.Group();
+        group.position.set(position.x, position.y, position.z);
+
+        // Core sphere
+        const coreGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const coreMaterial = new THREE.MeshPhongMaterial({
+            color: CONFIG.colors.normal,
+            emissive: CONFIG.colors.normal,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        group.add(core);
+
+        // Outer ring
+        const ringGeometry = new THREE.RingGeometry(0.35, 0.4, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.accentCyan,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        group.add(ring);
+
+        // Pulse effect ring
+        const pulseGeometry = new THREE.RingGeometry(0.4, 0.45, 32);
+        const pulseMaterial = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.accentTeal,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
+        pulse.rotation.x = -Math.PI / 2;
+        group.add(pulse);
+
+        // Connection line to floor
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, -position.y, 0)
+        ]);
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: CONFIG.colors.accentTeal,
+            transparent: true,
+            opacity: 0.3
+        });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        group.add(line);
+
+        // Store reference for updates
+        group.userData = {
+            sensorId,
+            core,
+            ring,
+            pulse,
+            coreMaterial,
+            status: 'normal',
+            value: 0
+        };
+
+        return {
+            group,
+            core,
+            ring,
+            pulse,
+            coreMaterial,
+            position
+        };
+    }
+
+    updateSensorStatus(sensorId, status, value) {
+        const node = this.sensorNodes.get(sensorId);
+        if (!node) return;
+
+        let color;
+        let emissiveIntensity;
+
+        switch (status) {
+            case 'critical':
+                color = CONFIG.colors.critical;
+                emissiveIntensity = 1.0;
+                break;
+            case 'warning':
+                color = CONFIG.colors.warning;
+                emissiveIntensity = 0.7;
+                break;
+            default:
+                color = CONFIG.colors.normal;
+                emissiveIntensity = 0.5;
+        }
+
+        node.coreMaterial.color.setHex(color);
+        node.coreMaterial.emissive.setHex(color);
+        node.coreMaterial.emissiveIntensity = emissiveIntensity;
+        node.group.userData.status = status;
+        node.group.userData.value = value;
+    }
+
+    setupEvents() {
+        window.addEventListener('resize', () => this.onResize());
+        if (this.container) {
+            this.container.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        }
+    }
+
+    onResize() {
+        if (!this.container || !this.camera || !this.renderer) return;
+
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
+
+    onMouseMove(event) {
+        if (!this.container) return;
+        const rect = this.container.getBoundingClientRect();
+        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        const sensorMeshes = [];
+        this.sensorNodes.forEach((node) => {
+            sensorMeshes.push(node.core);
+        });
+
+        const intersects = this.raycaster.intersectObjects(sensorMeshes);
+
+        if (intersects.length > 0 && this.tooltip) {
+            const sensorData = intersects[0].object.parent.userData;
+            this.tooltip.style.display = 'block';
+            this.tooltip.style.left = `${event.clientX - rect.left + 15}px`;
+            this.tooltip.style.top = `${event.clientY - rect.top - 10}px`;
+            this.tooltip.innerHTML = `
+                <div class="tooltip-title">${this.getSensorName(sensorData.sensorId)}</div>
+                <div class="tooltip-value">${sensorData.value.toFixed(2)}</div>
+                <div class="tooltip-status ${sensorData.status}">${sensorData.status.toUpperCase()}</div>
+            `;
+        } else if (this.tooltip) {
+            this.tooltip.style.display = 'none';
+        }
+    }
+
+    getSensorName(sensorId) {
+        const names = {
+            'temperature': 'Temperature',
+            'humidity': 'Humidity',
+            'gas': 'Gas Resistance',
+            'air-quality': 'Air Quality',
+            'no2': 'NO2',
+            'co': 'CO',
+            'tvoc': 'TVOC',
+            'eco2': 'eCO2',
+            'surface-temp': 'Surface Temp 1',
+            'surface-temp-2': 'Surface Temp 2',
+            'pressure': 'Pressure',
+            'current': 'Current'
+        };
+        return names[sensorId] || sensorId;
+    }
+
+    animate() {
+        if (!this.isInitialized) return;
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        const time = Date.now() * 0.001;
+
+        // Rotate building slowly
+        if (this.building) {
+            this.building.rotation.y = Math.sin(time * 0.1) * 0.1;
+        }
+
+        // Animate sensor nodes
+        this.sensorNodes.forEach((node, sensorId) => {
+            // Pulse animation
+            const pulseScale = 1 + Math.sin(time * 2) * 0.2;
+            node.pulse.scale.set(pulseScale, pulseScale, 1);
+            node.pulse.material.opacity = 0.3 - Math.sin(time * 2) * 0.15;
+
+            // Ring rotation
+            node.ring.rotation.z = time * 0.5;
+
+            // Critical status pulsing
+            if (node.group.userData.status === 'critical') {
+                const intensity = 0.7 + Math.sin(time * 5) * 0.3;
+                node.coreMaterial.emissiveIntensity = intensity;
             }
-        }, 2000);
+        });
+
+        this.renderer.render(this.scene, this.camera);
     }
-    updateDeviceSensor(deviceIndex, sensorId, value) {
-        const device = this.devices[deviceIndex];
-        if (!device || !device.sensors[sensorId]) return;
-        const sensor = device.sensors[sensorId];
-        sensor.current = value;
-        sensor.history.push({ value, time: new Date() });
-        if (sensor.history.length > 100) sensor.history.shift();
-        if (value >= sensor.thresholds.critical) {
-            sensor.status = 'critical';
-        } else if (value >= sensor.thresholds.warning) {
-            sensor.status = 'warning';
-        } else {
-            sensor.status = 'normal';
+
+    dispose() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
         }
-        if (deviceIndex === this.state.selectedDevice) {
-            this.sensors[sensorId] = { ...this.sensors[sensorId], ...sensor };
-            this.updateSensorUI(sensorId);
+        if (this.renderer) {
+            this.renderer.dispose();
         }
     }
-    setupEventListeners() {
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                const page = e.currentTarget.dataset.page;
-                this.switchPage(page);
-            });
-        });
-        document.querySelectorAll('.sensor-metric, .sensor-full-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const sensorId = card.dataset.sensor;
-                if (sensorId) this.showSensorModal(sensorId);
-            });
-        });
-        document.querySelectorAll('.panel-sensor').forEach(sensor => {
-            sensor.addEventListener('click', () => {
-                const sensorId = sensor.dataset.sensor;
-                if (sensorId) this.showSensorModal(sensorId);
-            });
-        });
-        document.getElementById('closeDetailModal')?.addEventListener('click', () => this.hideModal());
-        document.querySelector('.modal-backdrop')?.addEventListener('click', () => this.hideModal());
-        document.getElementById('resetView')?.addEventListener('click', () => this.resetPanelView());
-        document.getElementById('toggleGrid')?.addEventListener('click', () => this.toggleGrid());
-        document.getElementById('prevWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
-        document.getElementById('nextWeekBtn')?.addEventListener('click', () => this.renderActivityChart());
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                this.filterAlerts(e.target.dataset.filter);
-            });
-        });
-        document.getElementById('clearAlerts')?.addEventListener('click', () => this.clearAlerts());
-        document.getElementById('analyticsSensorSelect')?.addEventListener('change', () => this.updateAnalyticsChart());
-        document.getElementById('analyticsTimeRange')?.addEventListener('change', () => this.updateAnalyticsChart());
-        document.querySelectorAll('#page-sensors .device-tab, #page-analytics .device-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const device = e.currentTarget.dataset.device;
-                const container = e.currentTarget.closest('.device-selector');
-                if (device === 'all') {
-                    this.state.selectedDevice = 'all';
-                } else {
-                    this.selectDevice(parseInt(device));
-                }
-                container.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-            });
-        });
-        document.querySelectorAll('#dashboardDeviceSelector .device-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const device = parseInt(e.currentTarget.dataset.device);
-                this.selectDevice(device);
-                document.querySelectorAll('#dashboardDeviceSelector .device-tab').forEach(t => t.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                this.updateDashboardForDevice(device);
-            });
-        });
-        document.querySelectorAll('.device-overview-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const device = parseInt(e.currentTarget.dataset.device);
-                this.selectDevice(device);
-            });
-        });
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                const view = e.currentTarget.dataset.view;
-                const grid = document.getElementById('allSensorsGrid');
-                if (grid) {
-                    grid.classList.toggle('list-view', view === 'list');
-                }
-            });
-        });
-        document.querySelectorAll('.sensor-chip').forEach(chip => {
-            chip.addEventListener('click', (e) => {
-                document.querySelectorAll('.sensor-chip').forEach(c => c.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                this.state.selectedSensor = e.currentTarget.dataset.sensor;
-                this.updateAnalyticsChart();
-            });
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.hideModal();
-        });
+}
+
+// ============================================================================
+// OSCILLOSCOPE CHART
+// ============================================================================
+
+class OscilloscopeChart {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.data = [];
+        this.maxPoints = options.maxPoints || CONFIG.oscilloscope.maxPoints;
+        this.color = options.color || '#45a29e';
+        this.glowColor = options.glowColor || '#66fcf1';
+        this.gridColor = options.gridColor || 'rgba(69, 162, 158, 0.1)';
+        this.min = options.min || 0;
+        this.max = options.max || 100;
+        this.unit = options.unit || '';
+        this.label = options.label || '';
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
     }
-    selectDevice(deviceIndex) {
-        this.state.selectedDevice = deviceIndex;
-        document.querySelectorAll('.device-overview-card').forEach(card => {
-            card.classList.toggle('active', parseInt(card.dataset.device) === deviceIndex);
-        });
-        const device = this.devices[deviceIndex];
-        if (device) {
-            Object.keys(device.sensors).forEach(sensorId => {
-                this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
-            });
-        }
-        this.renderAllSensorsPage();
-        this.updateSystemStatus();
+
+    resize() {
+        if (!this.canvas.parentElement) return;
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+        this.ctx.scale(dpr, dpr);
+        this.width = rect.width;
+        this.height = rect.height;
     }
-    updateDashboardForDevice(deviceIndex) {
-        const device = this.devices[deviceIndex];
-        if (!device) return;
-        Object.keys(device.sensors).forEach(sensorId => {
-            this.sensors[sensorId] = { ...this.sensors[sensorId], ...device.sensors[sensorId] };
-            this.updateSensorUI(sensorId);
-            this.updateSensorSparkline(sensorId);
-        });
-        this.updateSystemStatus();
-        this.updatePanelDisplay();
+
+    addPoint(value) {
+        this.data.push(value);
+        if (this.data.length > this.maxPoints) {
+            this.data.shift();
+        }
+        this.render();
     }
-    updateDashboardSummary() {
-        let totalPower = 0;
-        let totalTemp = 0;
-        this.devices.forEach(device => {
-            totalPower += device.sensors.current.current * 220;
-            totalTemp += device.sensors.temperature.current;
-        });
-        const avgTemp = totalTemp / this.devices.length;
-        const powerEl = document.getElementById('dashTotalPower');
-        if (powerEl) powerEl.textContent = (totalPower / 1000).toFixed(2) + ' kW';
-        const tempEl = document.getElementById('dashAvgTemp');
-        if (tempEl) tempEl.textContent = avgTemp.toFixed(1) + '°C';
-    }
-    updateDeviceOverview() {
-        this.devices.forEach((device, index) => {
-            let normalCount = 0, warningCount = 0, criticalCount = 0;
-            Object.values(device.sensors).forEach(sensor => {
-                if (sensor.status === 'critical') criticalCount++;
-                else if (sensor.status === 'warning') warningCount++;
-                else normalCount++;
-            });
-            const total = Object.keys(device.sensors).length;
-            device.health = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-            const healthEl = document.getElementById(`device${index}Health`);
-            if (healthEl) healthEl.textContent = device.health + '%';
-            const tempEl = document.getElementById(`device${index}Temp`);
-            if (tempEl) tempEl.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
-            const humidityEl = document.getElementById(`device${index}Humidity`);
-            if (humidityEl) humidityEl.textContent = device.sensors.humidity.current.toFixed(0) + '%';
-            const currentEl = document.getElementById(`device${index}Current`);
-            if (currentEl) currentEl.textContent = device.sensors.current.current.toFixed(1) + 'A';
-            const ringProgress = document.querySelector(`.ring-progress[data-device="${index}"]`);
-            if (ringProgress) {
-                const circumference = 94.2;
-                const offset = circumference - (device.health / 100) * circumference;
-                ringProgress.style.strokeDashoffset = offset;
-                if (criticalCount > 0) {
-                    ringProgress.style.stroke = '#ef4444';
-                } else if (warningCount > 0) {
-                    ringProgress.style.stroke = '#f59e0b';
-                } else {
-                    ringProgress.style.stroke = '#10b981';
-                }
-            }
-        });
-    }
-    updateEnergyFlow() {
-        let totalPower = 0;
-        this.devices.forEach((device, index) => {
-            const current = device.sensors.current.current;
-            const power = current * 220; 
-            totalPower += power;
-            const currentEl = document.getElementById(`flowDevice${index}Current`);
-            if (currentEl) currentEl.textContent = current.toFixed(1) + 'A';
-            const powerEl = document.getElementById(`flowDevice${index}Power`);
-            if (powerEl) powerEl.textContent = Math.round(power) + 'W';
-            const statusEl = document.getElementById(`status${index}`);
-            if (statusEl) {
-                statusEl.classList.remove('normal', 'warning', 'critical');
-                let status = 'normal';
-                Object.values(device.sensors).forEach(sensor => {
-                    if (sensor.status === 'critical') status = 'critical';
-                    else if (sensor.status === 'warning' && status !== 'critical') status = 'warning';
-                });
-                statusEl.classList.add(status);
-            }
-        });
-        const totalPowerEl = document.getElementById('totalPower');
-        if (totalPowerEl) totalPowerEl.textContent = (totalPower / 1000).toFixed(2);
-        const device = this.devices[0];
-        const tempBar = document.getElementById('tempBar0');
-        if (tempBar) {
-            const tempPercent = Math.min(100, (device.sensors.temperature.current - 15) / (60 - 15) * 100);
-            tempBar.setAttribute('width', tempPercent * 2);
-        }
-        const humidityBar = document.getElementById('humidityBar0');
-        if (humidityBar) {
-            const humidityPercent = Math.min(100, device.sensors.humidity.current);
-            humidityBar.setAttribute('width', humidityPercent * 2);
-        }
-        const coBar = document.getElementById('coBar0');
-        if (coBar) {
-            const coPercent = Math.min(100, device.sensors.co.current / 50 * 100);
-            coBar.setAttribute('width', coPercent * 2);
-        }
-        const tempBarVal = document.getElementById('tempBarVal0');
-        if (tempBarVal) tempBarVal.textContent = device.sensors.temperature.current.toFixed(1) + '°C';
-        const humidityBarVal = document.getElementById('humidityBarVal0');
-        if (humidityBarVal) humidityBarVal.textContent = device.sensors.humidity.current.toFixed(0) + '%';
-        const coBarVal = document.getElementById('coBarVal0');
-        if (coBarVal) coBarVal.textContent = device.sensors.co.current.toFixed(1) + 'ppm';
-    }
-    updateMainGauge() {
-        let totalHealth = 0;
-        let normalDevices = 0, warningDevices = 0, criticalDevices = 0;
-        this.devices.forEach(device => {
-            totalHealth += device.health;
-            if (device.health >= 90) normalDevices++;
-            else if (device.health >= 70) warningDevices++;
-            else criticalDevices++;
-        });
-        const avgHealth = Math.round(totalHealth / this.devices.length);
-        const gaugeProgress = document.getElementById('mainGaugeProgress');
-        if (gaugeProgress) {
-            const circumference = 534;
-            const offset = circumference - (avgHealth / 100) * circumference;
-            gaugeProgress.style.strokeDashoffset = offset;
-        }
-        const gaugeValue = document.getElementById('mainGaugeValue');
-        if (gaugeValue) gaugeValue.textContent = avgHealth;
-        const statusEl = document.getElementById('systemStatus');
-        if (statusEl) {
-            if (criticalDevices > 0) {
-                statusEl.textContent = 'Critical Alert';
-                statusEl.style.color = '#ef4444';
-            } else if (warningDevices > 0) {
-                statusEl.textContent = 'Warning';
-                statusEl.style.color = '#f59e0b';
-            } else {
-                statusEl.textContent = 'All Systems Normal';
-                statusEl.style.color = '#10b981';
-            }
-        }
-        document.getElementById('normalDevices')?.textContent && (document.getElementById('normalDevices').textContent = normalDevices);
-        document.getElementById('warningDevices')?.textContent && (document.getElementById('warningDevices').textContent = warningDevices);
-        document.getElementById('criticalDevices')?.textContent && (document.getElementById('criticalDevices').textContent = criticalDevices);
-        const avgTempEl = document.getElementById('avgTemp');
-        const avgHumidityEl = document.getElementById('avgHumidity');
-        const avgCurrentEl = document.getElementById('avgCurrent');
-        if (avgTempEl) {
-            const avgTemp = this.devices.reduce((sum, d) => sum + d.sensors.temperature.current, 0) / this.devices.length;
-            avgTempEl.textContent = avgTemp.toFixed(1) + '°C';
-        }
-        if (avgHumidityEl) {
-            const avgHumidity = this.devices.reduce((sum, d) => sum + d.sensors.humidity.current, 0) / this.devices.length;
-            avgHumidityEl.textContent = avgHumidity.toFixed(0) + '%';
-        }
-        if (avgCurrentEl) {
-            const totalCurrent = this.devices.reduce((sum, d) => sum + d.sensors.current.current, 0);
-            avgCurrentEl.textContent = totalCurrent.toFixed(2) + 'A';
-        }
-    }
-    renderMiniGauges() {
-        const device = this.devices[this.state.selectedDevice] || this.devices[0];
-        this.renderMiniGauge('tempMiniGauge', device.sensors.temperature, '#f59e0b');
-        this.renderMiniGauge('humidityMiniGauge', device.sensors.humidity, '#00c8ff');
-        this.renderMiniGauge('currentMiniGauge', device.sensors.current, '#eab308');
-    }
-    renderMiniGauge(canvasId, sensor, color) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = 30;
+
+    render() {
+        const ctx = this.ctx;
+        const { width, height } = this;
+
+        if (!width || !height) return;
+
+        // Clear
         ctx.clearRect(0, 0, width, height);
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 6;
-        ctx.stroke();
-        const range = sensor.max - sensor.min;
-        const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
-        const startAngle = -Math.PI / 2;
-        const endAngle = startAngle + normalized * Math.PI * 2;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 6;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-    }
-    connectMQTT() {
-        if (window.mqttClient) {
-            const originalUpdate = window.mqttClient.updateDashboardSensors;
-            window.mqttClient.updateDashboardSensors = (data) => {
-                if (originalUpdate) originalUpdate.call(window.mqttClient, data);
-                this.handleMQTTData(data);
-            };
-            if (window.mqttClient.client && window.mqttClient.client.isConnected()) {
-                this.setConnectionStatus(true);
-            }
-        } else {
-            this.initOwnMQTT();
+
+        // Background gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+        bgGradient.addColorStop(0, 'rgba(11, 12, 16, 0.9)');
+        bgGradient.addColorStop(1, 'rgba(31, 40, 51, 0.9)');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Grid lines
+        ctx.strokeStyle = this.gridColor;
+        ctx.lineWidth = 1;
+
+        // Horizontal grid
+        const hLines = 4;
+        for (let i = 1; i < hLines; i++) {
+            const y = (height / hLines) * i;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
         }
-    }
-    initOwnMQTT() {
-        try {
-            const clientId = 'aico3d_' + Math.random().toString(16).substr(2, 8);
-            const client = new Paho.MQTT.Client('213.142.151.191', 9001, clientId);
-            client.onConnectionLost = (responseObject) => {
-                console.log('MQTT Connection lost:', responseObject.errorMessage);
-                this.setConnectionStatus(false);
-                setTimeout(() => this.initOwnMQTT(), 5000);
-            };
-            client.onMessageArrived = (message) => {
-                this.parseMQTTMessage(message.payloadString);
-            };
-            client.connect({
-                onSuccess: () => {
-                    console.log('MQTT Connected');
-                    this.setConnectionStatus(true);
-                    client.subscribe('aicofire');
-                },
-                onFailure: (err) => {
-                    console.log('MQTT Connection failed:', err);
-                    this.setConnectionStatus(false);
-                    setTimeout(() => this.initOwnMQTT(), 5000);
-                }
-            });
-            this.mqttClient = client;
-        } catch (e) {
-            console.error('MQTT Error:', e);
-            this.setConnectionStatus(false);
+
+        // Vertical grid
+        const vLines = 6;
+        for (let i = 1; i < vLines; i++) {
+            const x = (width / vLines) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
         }
-    }
-    parseMQTTMessage(payload) {
-        try {
-            if (!payload.startsWith('A;') || !payload.endsWith(';B')) return;
-            const parts = payload.slice(2, -2).split(';');
-            if (parts.length < 15) return;
-            const data = {
-                temperature: parseFloat(parts[0]) || 0,
-                humidity: parseFloat(parts[1]) || 0,
-                gas: parseFloat(parts[2]) || 0,
-                'air-quality': parseFloat(parts[3]) || 0,
-                no2: parseFloat(parts[4]) || 0,
-                co: parseFloat(parts[5]) || 0,
-                tvoc: parseFloat(parts[6]) || 0,
-                eco2: parseFloat(parts[7]) || 0,
-                'surface-temp': parseFloat(parts[8]) || 0,
-                'surface-temp-2': parseFloat(parts[9]) || 0,
-                pressure: parseFloat(parts[10]) || 0,
-                current: parseFloat(parts[11]) || 0,
-                warning2: parts[12] || '0',
-                warning1: parts[13] || '0',
-                panelHealth: parseFloat(parts[14]) || 0
-            };
-            this.handleMQTTData(data);
-        } catch (e) {
-            console.error('Parse error:', e);
-        }
-    }
-    handleMQTTData(data) {
-        this.state.lastUpdate = new Date();
-        if (data.panelHealth !== undefined) {
-            this.state.boardHealth = data.panelHealth;
-            this.updateBoardHealth();
-        }
-        Object.keys(this.sensors).forEach(sensorId => {
-            if (data[sensorId] !== undefined) {
-                this.updateSensor(sensorId, data[sensorId]);
-            }
+
+        if (this.data.length < 2) return;
+
+        // Calculate points
+        const points = this.data.map((value, index) => {
+            const x = (index / (this.maxPoints - 1)) * width;
+            const normalizedValue = (value - this.min) / (this.max - this.min);
+            const y = height - (normalizedValue * (height - 20)) - 10;
+            return { x, y };
         });
-        this.updateSystemStatus();
-        this.updatePanelDisplay();
+
+        // Glow effect
+        ctx.save();
+        ctx.shadowColor = this.glowColor;
+        ctx.shadowBlur = CONFIG.oscilloscope.glowIntensity;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = CONFIG.oscilloscope.lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Draw line
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const curr = points[i];
+            const midX = (prev.x + curr.x) / 2;
+            const midY = (prev.y + curr.y) / 2;
+            ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.stroke();
+
+        // Fill gradient under line
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+
+        const fillGradient = ctx.createLinearGradient(0, 0, 0, height);
+        fillGradient.addColorStop(0, this.hexToRgba(this.color, 0.3));
+        fillGradient.addColorStop(1, this.hexToRgba(this.color, 0.0));
+        ctx.fillStyle = fillGradient;
+        ctx.fill();
+
+        ctx.restore();
+
+        // Current value display
+        if (this.data.length > 0) {
+            const currentValue = this.data[this.data.length - 1];
+            ctx.font = 'bold 14px "Rajdhani", sans-serif';
+            ctx.fillStyle = this.glowColor;
+            ctx.textAlign = 'right';
+            ctx.fillText(`${currentValue.toFixed(1)}${this.unit}`, width - 8, 20);
+        }
+
+        // Scan line effect
+        const scanLinePos = (Date.now() % 3000) / 3000;
+        const scanX = scanLinePos * width;
+        const scanGradient = ctx.createLinearGradient(scanX - 30, 0, scanX + 30, 0);
+        scanGradient.addColorStop(0, 'rgba(102, 252, 241, 0)');
+        scanGradient.addColorStop(0.5, 'rgba(102, 252, 241, 0.1)');
+        scanGradient.addColorStop(1, 'rgba(102, 252, 241, 0)');
+        ctx.fillStyle = scanGradient;
+        ctx.fillRect(scanX - 30, 0, 60, height);
     }
-    updateSensor(sensorId, value) {
-        const sensor = this.sensors[sensorId];
-        if (!sensor) return;
-        sensor.current = value;
-        sensor.history.push({ value, time: new Date() });
-        if (sensor.history.length > 100) sensor.history.shift();
-        if (value >= sensor.thresholds.critical) {
-            sensor.status = 'critical';
-        } else if (value >= sensor.thresholds.warning) {
-            sensor.status = 'warning';
-        } else {
-            sensor.status = 'normal';
-        }
-        this.updateSensorUI(sensorId);
-        this.updateSensorSparkline(sensorId);
-        if (sensor.status !== 'normal') {
-            this.addAlert(sensor);
-        }
+
+    hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
-    updateSensorUI(sensorId) {
-        const sensor = this.sensors[sensorId];
-        const valueEl = document.getElementById(`${sensorId}-card-value`);
-        if (valueEl) valueEl.textContent = sensor.current.toFixed(1);
-        const statusEl = document.getElementById(`${sensorId}-card-status`);
-        if (statusEl) {
-            statusEl.innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
-        }
-        if (sensor.history.length > 0) {
-            const values = sensor.history.map(h => h.value);
-            const minEl = document.getElementById(`${sensorId}-min`);
-            const maxEl = document.getElementById(`${sensorId}-max`);
-            if (minEl) minEl.textContent = Math.min(...values).toFixed(1);
-            if (maxEl) maxEl.textContent = Math.max(...values).toFixed(1);
-        }
-        const panelLabel = document.getElementById(`panel-${sensorId}`);
-        if (panelLabel) panelLabel.textContent = sensor.current.toFixed(1);
-        const panelSensor = document.querySelector(`.panel-sensor[data-sensor="${sensorId}"]`);
-        if (panelSensor) {
-            panelSensor.dataset.status = sensor.status;
-        }
+
+    setColor(color, glowColor) {
+        this.color = color;
+        this.glowColor = glowColor || color;
     }
-    updateSensorSparkline(sensorId) {
-        const sensor = this.sensors[sensorId];
-        const container = document.getElementById(`${sensorId}-sparkline`);
-        if (!container || sensor.history.length < 2) return;
-        const data = sensor.history.slice(-30).map(h => h.value);
-        const width = container.offsetWidth || 200;
-        const height = container.offsetHeight || 40;
-        const padding = 3;
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const range = max - min || 1;
-        const points = data.map((v, i) => ({
-            x: (i / (data.length - 1)) * width,
-            y: height - padding - ((v - min) / range) * (height - padding * 2)
-        }));
-        let pathD = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = i > 0 ? points[i - 1] : points[0];
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            const p3 = i < points.length - 2 ? points[i + 2] : p2;
-            const cp1x = p1.x + (p2.x - p0.x) / 6;
-            const cp1y = p1.y + (p2.y - p0.y) / 6;
-            const cp2x = p2.x - (p3.x - p1.x) / 6;
-            const cp2y = p2.y - (p3.y - p1.y) / 6;
-            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+}
+
+// ============================================================================
+// COCKPIT GAUGE
+// ============================================================================
+
+class CockpitGauge {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.value = options.value || 0;
+        this.min = options.min || 0;
+        this.max = options.max || 100;
+        this.label = options.label || '';
+        this.unit = options.unit || '';
+        this.warningThreshold = options.warningThreshold || 70;
+        this.criticalThreshold = options.criticalThreshold || 90;
+
+        this.render();
+    }
+
+    render() {
+        const percentage = ((this.value - this.min) / (this.max - this.min)) * 100;
+        const angle = (percentage / 100) * 270 - 135; // -135 to 135 degrees
+
+        let statusColor = '#45a29e';
+        let statusClass = 'normal';
+
+        if (this.value >= this.criticalThreshold) {
+            statusColor = '#e63946';
+            statusClass = 'critical';
+        } else if (this.value >= this.warningThreshold) {
+            statusColor = '#ff9f1c';
+            statusClass = 'warning';
         }
-        const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
-        const color = this.getSensorColor(sensorId);
-        const lastPoint = points[points.length - 1];
-        container.innerHTML = `
-            <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+
+        // Create tick marks
+        let ticks = '';
+        for (let i = 0; i <= 27; i++) {
+            const tickAngle = -135 + (i * 10);
+            const isMajor = i % 3 === 0;
+            const tickClass = isMajor ? 'tick-major' : 'tick-minor';
+            ticks += `<line class="gauge-tick ${tickClass}"
+                x1="50" y1="${isMajor ? 8 : 10}"
+                x2="50" y2="${isMajor ? 15 : 13}"
+                transform="rotate(${tickAngle} 50 50)"/>`;
+        }
+
+        this.container.innerHTML = `
+            <svg class="gauge-svg" viewBox="0 0 100 100">
                 <defs>
-                    <linearGradient id="grad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.4"/>
-                        <stop offset="50%" style="stop-color:${color};stop-opacity:0.15"/>
-                        <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
+                    <linearGradient id="gaugeGradient${this.label}" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#45a29e"/>
+                        <stop offset="70%" style="stop-color:#ff9f1c"/>
+                        <stop offset="100%" style="stop-color:#e63946"/>
                     </linearGradient>
-                    <filter id="glow-${sensorId}" x="-50%" y="-50%" width="200%" height="200%">
+                    <filter id="glow${this.label}">
                         <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                         <feMerge>
                             <feMergeNode in="coloredBlur"/>
@@ -557,827 +766,656 @@ class AICO3DDashboard {
                         </feMerge>
                     </filter>
                 </defs>
-                <path d="${fillPathD}" fill="url(#grad-${sensorId})"/>
-                <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-${sensorId})"/>
-                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="4" fill="${color}" filter="url(#glow-${sensorId})"/>
-                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="2" fill="#fff"/>
+
+                <!-- Background arc -->
+                <circle class="gauge-bg" cx="50" cy="50" r="40"
+                    stroke="rgba(69, 162, 158, 0.2)"
+                    stroke-width="6"
+                    fill="none"
+                    stroke-dasharray="188.5 62.8"
+                    stroke-dashoffset="-31.4"
+                    transform="rotate(-90 50 50)"/>
+
+                <!-- Value arc -->
+                <circle class="gauge-value" cx="50" cy="50" r="40"
+                    stroke="${statusColor}"
+                    stroke-width="6"
+                    fill="none"
+                    stroke-dasharray="${188.5 * percentage / 100} ${251.3 - 188.5 * percentage / 100}"
+                    stroke-dashoffset="-31.4"
+                    transform="rotate(-90 50 50)"
+                    filter="url(#glow${this.label})"/>
+
+                <!-- Tick marks -->
+                <g class="gauge-ticks" stroke="rgba(102, 252, 241, 0.5)" stroke-width="1">
+                    ${ticks}
+                </g>
+
+                <!-- Needle -->
+                <g class="gauge-needle" transform="rotate(${angle} 50 50)">
+                    <line x1="50" y1="50" x2="50" y2="18"
+                        stroke="${statusColor}"
+                        stroke-width="2"
+                        filter="url(#glow${this.label})"/>
+                    <circle cx="50" cy="50" r="4" fill="${statusColor}"/>
+                </g>
+
+                <!-- Center -->
+                <circle cx="50" cy="50" r="6" fill="#1f2833" stroke="#45a29e" stroke-width="1"/>
+
+                <!-- Value text -->
+                <text x="50" y="70" class="gauge-value-text"
+                    fill="${statusColor}"
+                    text-anchor="middle"
+                    font-family="Orbitron, monospace"
+                    font-size="10"
+                    font-weight="bold">
+                    ${this.value.toFixed(1)}
+                </text>
+
+                <!-- Unit text -->
+                <text x="50" y="80" class="gauge-unit-text"
+                    fill="rgba(102, 252, 241, 0.7)"
+                    text-anchor="middle"
+                    font-family="Roboto Mono, monospace"
+                    font-size="6">
+                    ${this.unit}
+                </text>
             </svg>
+            <div class="gauge-label">${this.label}</div>
         `;
     }
-    getSensorColor(sensorId) {
-        const colors = {
-            temperature: '#ff6b35',
-            humidity: '#00d4ff',
-            'air-quality': '#6366f1',
-            gas: '#ffc107',
-            'surface-temp': '#8a2be2',
-            'surface-temp-2': '#ff1493',
-            tvoc: '#00ff88',
-            eco2: '#ffd700',
-            no2: '#a855f7',
-            co: '#ff3b5c',
-            pressure: '#6c757d',
-            current: '#ffff00'
-        };
-        return colors[sensorId] || '#00d4ff';
-    }
-    updateSystemStatus() {
-        let normalCount = 0, warningCount = 0, criticalCount = 0;
-        Object.values(this.sensors).forEach(sensor => {
-            if (sensor.status === 'critical') criticalCount++;
-            else if (sensor.status === 'warning') warningCount++;
-            else normalCount++;
-        });
-        document.getElementById('normalSensorCount').textContent = normalCount;
-        document.getElementById('warningSensorCount').textContent = warningCount;
-        document.getElementById('criticalSensorCount').textContent = criticalCount;
-        document.getElementById('onlineSensors').textContent = Object.keys(this.sensors).length;
-        document.getElementById('warningCount').textContent = warningCount;
-        document.getElementById('criticalCount').textContent = criticalCount;
-        const total = Object.keys(this.sensors).length;
-        const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-        document.getElementById('healthPercent').textContent = healthPercent;
-        const ring = document.getElementById('healthRingProgress');
-        if (ring) {
-            const circumference = 2 * Math.PI * 52;
-            const offset = circumference - (healthPercent / 100) * circumference;
-            ring.style.strokeDashoffset = offset;
-            if (criticalCount > 0) {
-                ring.style.stroke = '#ff3b5c';
-            } else if (warningCount > 0) {
-                ring.style.stroke = '#ff6b35';
-            } else {
-                ring.style.stroke = '#00ff88';
-            }
-        }
-        const indicator = document.getElementById('systemStatusIndicator');
-        if (indicator) {
-            if (criticalCount > 0) {
-                indicator.innerHTML = '<span class="status-dot" style="background:#ff3b5c"></span><span style="color:#ff3b5c">Critical</span>';
-            } else if (warningCount > 0) {
-                indicator.innerHTML = '<span class="status-dot" style="background:#ff6b35"></span><span style="color:#ff6b35">Warning</span>';
-            } else {
-                indicator.innerHTML = '<span class="status-dot active"></span><span>Active</span>';
-            }
-        }
-        document.getElementById('ledWarning')?.classList.toggle('active', warningCount > 0);
-        document.getElementById('ledCritical')?.classList.toggle('active', criticalCount > 0);
-    }
-    updateBoardHealth() {
-        const display = document.getElementById('boardHealthDisplay');
-        if (display) {
-            display.textContent = this.state.boardHealth.toFixed(2) + '%';
-        }
-    }
-    updatePanelDisplay() {
-        const currentSensor = this.sensors.current;
-        const display = document.getElementById('panelCurrentDisplay');
-        if (display) {
-            display.textContent = currentSensor.current.toFixed(1);
-        }
-    }
-    setConnectionStatus(connected) {
-        this.state.mqttConnected = connected;
-        const statusEl = document.getElementById('connectionStatus');
-        if (statusEl) {
-            statusEl.classList.toggle('connected', connected);
-            statusEl.querySelector('span').textContent = connected ? 'MQTT Connected' : 'MQTT Disconnected';
-        }
-    }
-    switchPage(page) {
-        this.state.currentPage = page;
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === page);
-        });
-        document.querySelectorAll('.page').forEach(p => {
-            p.classList.toggle('active', p.id === `page-${page}`);
-        });
-        const titles = {
-            dashboard: 'Dashboard',
-            sensors: 'All Sensors',
-            analytics: 'Analytics',
-            alerts: 'Alerts'
-        };
-        document.getElementById('pageTitle').textContent = titles[page] || page;
-        document.getElementById('breadcrumbPage').textContent = titles[page] || page;
-        if (page === 'analytics') {
-            this.updateAnalyticsChart();
-            this.updateEnergyFlow();
-            this.updateMainGauge();
-            this.renderMiniGauges();
-        } else if (page === 'sensors') {
-            this.renderAllSensorsPage();
-            this.updateDeviceOverview();
-        } else if (page === 'alerts') {
-            this.renderAlertsList();
-        }
-    }
-    renderAllSensorsPage() {
-        const grid = document.getElementById('allSensorsGrid');
-        if (!grid) return;
-        grid.innerHTML = Object.values(this.sensors).map(sensor => {
-            const minVal = sensor.history.length > 0 ? Math.min(...sensor.history.map(h => h.value)).toFixed(1) : '--';
-            const maxVal = sensor.history.length > 0 ? Math.max(...sensor.history.map(h => h.value)).toFixed(1) : '--';
-            const avgVal = sensor.history.length > 0 ? (sensor.history.reduce((a, b) => a + b.value, 0) / sensor.history.length).toFixed(1) : '--';
-            return `
-                <div class="sensor-full-card glass-card" data-sensor="${sensor.id}" data-status="${sensor.status}">
-                    <div class="sensor-card-header">
-                        <div class="sensor-icon ${sensor.iconClass}">
-                            <i class="fas ${sensor.icon}"></i>
-                        </div>
-                        <div class="sensor-info">
-                            <span class="sensor-name">${sensor.name}</span>
-                            <span class="sensor-type">${this.getSensorCategory(sensor.id)}</span>
-                        </div>
-                        <div class="status-indicator-dot"></div>
-                    </div>
-                    <div class="sensor-card-body">
-                        <div class="sensor-value-display">
-                            <span class="big-value">${sensor.current.toFixed(1)}</span>
-                            <span class="value-unit">${sensor.unit}</span>
-                        </div>
-                        <div class="sensor-stats-row">
-                            <div class="sensor-stat">
-                                <span class="sensor-stat-label">Min</span>
-                                <span class="sensor-stat-value">${minVal}</span>
-                            </div>
-                            <div class="sensor-stat">
-                                <span class="sensor-stat-label">Avg</span>
-                                <span class="sensor-stat-value">${avgVal}</span>
-                            </div>
-                            <div class="sensor-stat">
-                                <span class="sensor-stat-label">Max</span>
-                                <span class="sensor-stat-value">${maxVal}</span>
-                            </div>
-                        </div>
-                        <div class="sensor-chart-container">
-                            <div class="mini-sparkline" id="${sensor.id}-full-sparkline"></div>
-                            <div class="sensor-threshold-indicator"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        grid.querySelectorAll('.sensor-full-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const sensorId = card.dataset.sensor;
-                if (sensorId) this.showSensorModal(sensorId);
-            });
-        });
-        Object.keys(this.sensors).forEach(sensorId => {
-            this.updateFullSensorSparkline(sensorId);
-        });
-    }
-    getSensorCategory(sensorId) {
-        const categories = {
-            temperature: 'Environmental',
-            humidity: 'Environmental',
-            'air-quality': 'Air Monitor',
-            gas: 'Gas Detector',
-            'surface-temp': 'Thermal',
-            'surface-temp-2': 'Thermal',
-            tvoc: 'Air Quality',
-            eco2: 'Air Quality',
-            no2: 'Gas Detector',
-            co: 'Safety',
-            pressure: 'Environmental',
-            current: 'Electrical'
-        };
-        return categories[sensorId] || 'Sensor';
-    }
-    updateFullSensorSparkline(sensorId) {
-        const sensor = this.sensors[sensorId];
-        const container = document.getElementById(`${sensorId}-full-sparkline`);
-        if (!container || sensor.history.length < 2) return;
-        const data = sensor.history.slice(-40).map(h => h.value);
-        const width = container.offsetWidth || 280;
-        const height = container.offsetHeight || 50;
-        const padding = 4;
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const range = max - min || 1;
-        const points = data.map((v, i) => ({
-            x: (i / (data.length - 1)) * width,
-            y: height - padding - ((v - min) / range) * (height - padding * 2)
-        }));
-        let pathD = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = i > 0 ? points[i - 1] : points[0];
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            const p3 = i < points.length - 2 ? points[i + 2] : p2;
-            const cp1x = p1.x + (p2.x - p0.x) / 6;
-            const cp1y = p1.y + (p2.y - p0.y) / 6;
-            const cp2x = p2.x - (p3.x - p1.x) / 6;
-            const cp2y = p2.y - (p3.y - p1.y) / 6;
-            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-        }
-        const fillPathD = pathD + ` L ${width} ${height} L 0 ${height} Z`;
-        const color = this.getSensorColor(sensorId);
-        const lastPoint = points[points.length - 1];
-        const lastValue = data[data.length - 1];
-        const status = lastValue >= sensor.thresholds.critical ? 'critical' :
-                      lastValue >= sensor.thresholds.warning ? 'warning' : 'normal';
-        const dotColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : color;
-        container.innerHTML = `
-            <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="fullGrad-${sensorId}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:${color};stop-opacity:0.45"/>
-                        <stop offset="40%" style="stop-color:${color};stop-opacity:0.2"/>
-                        <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
-                    </linearGradient>
-                    <filter id="fullGlow-${sensorId}" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
-                <path d="${fillPathD}" fill="url(#fullGrad-${sensorId})"/>
-                <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#fullGlow-${sensorId})"/>
-                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="6" fill="${dotColor}" filter="url(#fullGlow-${sensorId})">
-                    <animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite"/>
-                </circle>
-                <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="3" fill="#fff"/>
-            </svg>
-        `;
-    }
-    renderActivityChart() {
-        const container = document.getElementById('activityChart');
-        if (!container) return;
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        container.innerHTML = days.map(day => {
-            const dots = Array(24).fill(null).map(() => {
-                const rand = Math.random();
-                let status = 'normal';
-                if (rand > 0.95) status = 'critical';
-                else if (rand > 0.85) status = 'warning';
-                else if (rand > 0.15) status = 'normal';
-                return `<div class="activity-dot ${status}"></div>`;
-            }).join('');
-            return `
-                <div class="day-column">
-                    <span class="day-label">${day}</span>
-                    <div class="dot-grid">${dots}</div>
-                </div>
-            `;
-        }).join('');
-    }
-    updateAnalyticsChart() {
-        const canvas = document.getElementById('analyticsCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const sensorId = this.state.selectedSensor || 'temperature';
-        const device = this.devices[this.state.selectedDevice] || this.devices[0];
-        const sensor = device ? device.sensors[sensorId] : this.sensors[sensorId];
-        const count = parseInt(document.getElementById('analyticsTimeRange')?.value || '50');
-        let data = sensor.history.slice(-count).map(h => h.value);
-        if (data.length < 2) {
-            for (let i = 0; i < count; i++) {
-                const t = i / count;
-                const wave = Math.sin(t * Math.PI * 4) * 0.2 + Math.sin(t * Math.PI * 7) * 0.1;
-                data.push(sensor.min + (sensor.max - sensor.min) * (0.3 + wave + Math.random() * 0.1));
-            }
-        }
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = rect.height + 'px';
-        ctx.scale(dpr, dpr);
-        const width = rect.width;
-        const height = rect.height;
-        const padding = { top: 30, right: 30, bottom: 40, left: 55 };
-        const chartWidth = width - padding.left - padding.right;
-        const chartHeight = height - padding.top - padding.bottom;
-        const min = Math.min(...data) * 0.95;
-        const max = Math.max(...data) * 1.05;
-        const range = max - min || 1;
-        const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-        bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-        bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
-        ctx.fillStyle = bgGradient;
-        ctx.fillRect(0, 0, width, height);
-        this.drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height);
-        const points = data.map((v, i) => ({
-            x: padding.left + (i / (data.length - 1)) * chartWidth,
-            y: padding.top + ((max - v) / range) * chartHeight
-        }));
-        const color = this.getSensorColor(sensorId);
-        this.drawChartGradientFill(ctx, points, color, padding, height);
-        this.drawBezierCurve(ctx, points, color);
-        this.drawDataPoints(ctx, points, color, data, sensor);
-        this.drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range);
-        this.updateChartStats(sensor, sensorId);
-        document.getElementById('totalAlerts').textContent = this.state.alerts.length;
-    }
-    drawPremiumGrid(ctx, padding, chartWidth, chartHeight, min, max, range, width, height) {
-        const gridLines = 6;
-        for (let i = 0; i <= gridLines; i++) {
-            const y = padding.top + (i / gridLines) * chartHeight;
-            const alpha = i === 0 || i === gridLines ? 0.15 : 0.06;
-            ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`;
-            ctx.lineWidth = i === 0 || i === gridLines ? 1 : 0.5;
-            ctx.setLineDash(i === 0 || i === gridLines ? [] : [4, 4]);
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(width - padding.right, y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            const val = max - (i / gridLines) * range;
-            ctx.font = '600 11px Inter';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.textAlign = 'right';
-            ctx.fillText(val.toFixed(1), padding.left - 10, y + 4);
-        }
-        const vLines = 8;
-        for (let i = 0; i <= vLines; i++) {
-            const x = padding.left + (i / vLines) * chartWidth;
-            ctx.strokeStyle = 'rgba(0, 200, 255, 0.04)';
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(x, padding.top);
-            ctx.lineTo(x, height - padding.bottom);
-            ctx.stroke();
-            if (i % 2 === 0) {
-                ctx.font = '500 10px Inter';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.textAlign = 'center';
-                const timeAgo = Math.round((1 - i / vLines) * 60);
-                ctx.fillText(timeAgo === 0 ? 'Now' : `-${timeAgo}s`, x, height - padding.bottom + 20);
-            }
-        }
-    }
-    drawChartGradientFill(ctx, points, color, padding, height) {
-        if (points.length < 2) return;
-        const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-        gradient.addColorStop(0, this.hexToRgba(color, 0.35));
-        gradient.addColorStop(0.3, this.hexToRgba(color, 0.2));
-        gradient.addColorStop(0.7, this.hexToRgba(color, 0.08));
-        gradient.addColorStop(1, this.hexToRgba(color, 0));
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, height - padding.bottom);
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = points[i];
-            const p1 = points[i + 1];
-            const cpx = (p0.x + p1.x) / 2;
-            ctx.quadraticCurveTo(p0.x, p0.y, cpx, (p0.y + p1.y) / 2);
-        }
-        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-        ctx.lineTo(points[points.length - 1].x, height - padding.bottom);
-        ctx.closePath();
-        ctx.fill();
-    }
-    drawBezierCurve(ctx, points, color) {
-        if (points.length < 2) return;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 15;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = i > 0 ? points[i - 1] : points[0];
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            const p3 = i < points.length - 2 ? points[i + 2] : p2;
-            const cp1x = p1.x + (p2.x - p0.x) / 6;
-            const cp1y = p1.y + (p2.y - p0.y) / 6;
-            const cp2x = p2.x - (p3.x - p1.x) / 6;
-            const cp2y = p2.y - (p3.y - p1.y) / 6;
-            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = i > 0 ? points[i - 1] : points[0];
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            const p3 = i < points.length - 2 ? points[i + 2] : p2;
-            const cp1x = p1.x + (p2.x - p0.x) / 6;
-            const cp1y = p1.y + (p2.y - p0.y) / 6;
-            const cp2x = p2.x - (p3.x - p1.x) / 6;
-            const cp2y = p2.y - (p3.y - p1.y) / 6;
-            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-        }
-        ctx.stroke();
-    }
-    drawDataPoints(ctx, points, color, data, sensor) {
-        const step = Math.max(1, Math.floor(points.length / 15));
-        points.forEach((point, i) => {
-            if (i % step !== 0 && i !== points.length - 1) return;
-            const isLast = i === points.length - 1;
-            const value = data[i];
-            const status = value >= sensor.thresholds.critical ? 'critical' :
-                          value >= sensor.thresholds.warning ? 'warning' : 'normal';
-            ctx.shadowColor = isLast ? color : 'transparent';
-            ctx.shadowBlur = isLast ? 20 : 0;
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, isLast ? 8 : 5, 0, Math.PI * 2);
-            ctx.fillStyle = status === 'critical' ? '#ef4444' :
-                           status === 'warning' ? '#f59e0b' :
-                           this.hexToRgba(color, 0.2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, isLast ? 4 : 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = isLast ? '#fff' : color;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            if (isLast) {
-                const tooltipWidth = 60;
-                const tooltipHeight = 28;
-                const tooltipX = point.x - tooltipWidth / 2;
-                const tooltipY = point.y - tooltipHeight - 15;
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.beginPath();
-                ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 6);
-                ctx.fill();
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 12px Inter';
-                ctx.textAlign = 'center';
-                ctx.fillText(value.toFixed(1) + sensor.unit, point.x, tooltipY + 18);
-            }
-        });
-    }
-    drawThresholdLines(ctx, sensor, padding, chartWidth, chartHeight, min, max, range) {
-        if (sensor.thresholds.warning >= min && sensor.thresholds.warning <= max) {
-            const y = padding.top + ((max - sensor.thresholds.warning) / range) * chartHeight;
-            ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([8, 4]);
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(padding.left + chartWidth, y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#f59e0b';
-            ctx.font = '600 9px Inter';
-            ctx.textAlign = 'left';
-            ctx.fillText('WARNING', padding.left + chartWidth + 5, y + 3);
-        }
-        if (sensor.thresholds.critical >= min && sensor.thresholds.critical <= max) {
-            const y = padding.top + ((max - sensor.thresholds.critical) / range) * chartHeight;
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([8, 4]);
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(padding.left + chartWidth, y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#ef4444';
-            ctx.font = '600 9px Inter';
-            ctx.textAlign = 'left';
-            ctx.fillText('CRITICAL', padding.left + chartWidth + 5, y + 3);
-        }
-    }
-    updateChartStats(sensor, sensorId) {
-        if (sensor.history.length > 0) {
-            const values = sensor.history.map(h => h.value);
-            const avg = values.reduce((a, b) => a + b, 0) / values.length;
-            const minVal = Math.min(...values);
-            const maxVal = Math.max(...values);
-            if (sensorId === 'temperature') {
-                document.getElementById('avgTemp')?.textContent && (document.getElementById('avgTemp').textContent = avg.toFixed(1) + '°C');
-                document.getElementById('tempRange')?.textContent && (document.getElementById('tempRange').textContent = `${minVal.toFixed(1)} ~ ${maxVal.toFixed(1)}°C`);
-            } else if (sensorId === 'humidity') {
-                document.getElementById('avgHumidity')?.textContent && (document.getElementById('avgHumidity').textContent = avg.toFixed(1) + '%');
-                document.getElementById('humidityRange')?.textContent && (document.getElementById('humidityRange').textContent = `${minVal.toFixed(0)} ~ ${maxVal.toFixed(0)}%`);
-            } else if (sensorId === 'current') {
-                document.getElementById('avgCurrent')?.textContent && (document.getElementById('avgCurrent').textContent = avg.toFixed(2) + 'A');
-                document.getElementById('totalCurrent')?.textContent && (document.getElementById('totalCurrent').textContent = (avg * 3).toFixed(2) + 'A');
-            }
-        }
-    }
-    hexToRgba(hex, alpha) {
-        const colors = {
-            '#ff6b35': `rgba(255, 107, 53, ${alpha})`,
-            '#00d4ff': `rgba(0, 212, 255, ${alpha})`,
-            '#6366f1': `rgba(99, 102, 241, ${alpha})`,
-            '#ffc107': `rgba(255, 193, 7, ${alpha})`,
-            '#8a2be2': `rgba(138, 43, 226, ${alpha})`,
-            '#ff1493': `rgba(255, 20, 147, ${alpha})`,
-            '#00ff88': `rgba(0, 255, 136, ${alpha})`,
-            '#ffd700': `rgba(255, 215, 0, ${alpha})`,
-            '#a855f7': `rgba(168, 85, 247, ${alpha})`,
-            '#ff3b5c': `rgba(255, 59, 92, ${alpha})`,
-            '#6c757d': `rgba(108, 117, 125, ${alpha})`,
-            '#ffff00': `rgba(255, 255, 0, ${alpha})`
-        };
-        return colors[hex] || `rgba(0, 200, 255, ${alpha})`;
-    }
-    renderGauges() {
-        this.renderGauge('tempGauge', this.sensors.temperature);
-        this.renderGauge('humidityGauge', this.sensors.humidity);
-        this.renderGauge('coGauge', this.sensors.co);
-        this.renderGauge('currentGauge', this.sensors.current);
-        this.renderSystemHealthGauge();
-        this.renderSensorSummary();
-    }
-    renderGauge(canvasId, sensor) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        const centerX = width / 2;
-        const centerY = height - 20;
-        const radius = 75;
-        ctx.clearRect(0, 0, width, height);
-        const bgGradient = ctx.createLinearGradient(0, 0, width, 0);
-        bgGradient.addColorStop(0, 'rgba(255,255,255,0.05)');
-        bgGradient.addColorStop(1, 'rgba(255,255,255,0.1)');
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-        ctx.strokeStyle = bgGradient;
-        ctx.lineWidth = 12;
-        ctx.stroke();
-        const range = sensor.max - sensor.min;
-        const normalized = Math.max(0, Math.min(1, (sensor.current - sensor.min) / range));
-        const endAngle = Math.PI + normalized * Math.PI;
-        let color = '#10b981';
-        if (sensor.status === 'warning') color = '#f59e0b';
-        else if (sensor.status === 'critical') color = '#ef4444';
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, Math.PI, endAngle, false);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 12;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 24px Inter';
-        ctx.textAlign = 'center';
-        ctx.fillText(sensor.current.toFixed(1), centerX, centerY - 15);
-        ctx.fillStyle = 'rgba(248,250,252,0.5)';
-        ctx.font = '12px Inter';
-        ctx.fillText(sensor.unit, centerX, centerY + 5);
-    }
-    renderSystemHealthGauge() {
-        const canvas = document.getElementById('systemHealthGauge');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = 90;
-        ctx.clearRect(0, 0, width, height);
-        let normalCount = 0, warningCount = 0, criticalCount = 0;
-        Object.values(this.sensors).forEach(sensor => {
-            if (sensor.status === 'critical') criticalCount++;
-            else if (sensor.status === 'warning') warningCount++;
-            else normalCount++;
-        });
-        const total = Object.keys(this.sensors).length;
-        const healthPercent = Math.round(((normalCount + warningCount * 0.5) / total) * 100);
-        const valueEl = document.getElementById('systemHealthValue');
-        if (valueEl) valueEl.textContent = healthPercent;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, false);
-        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-        ctx.lineWidth = 16;
-        ctx.stroke();
-        const startAngle = -Math.PI / 2;
-        const endAngle = startAngle + (healthPercent / 100) * Math.PI * 2;
-        let color = '#10b981';
-        if (healthPercent < 50) color = '#ef4444';
-        else if (healthPercent < 75) color = '#f59e0b';
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, '#00c8ff');
-        gradient.addColorStop(1, '#7c3aed');
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
-        ctx.strokeStyle = healthPercent >= 75 ? gradient : color;
-        ctx.lineWidth = 16;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius - 25, 0, Math.PI * 2, false);
-        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-    }
-    renderSensorSummary() {
-        const grid = document.getElementById('sensorSummaryGrid');
-        if (!grid) return;
-        const topSensors = ['temperature', 'humidity', 'co', 'current', 'air-quality', 'pressure'];
-        grid.innerHTML = topSensors.map(sensorId => {
-            const sensor = this.sensors[sensorId];
-            if (!sensor) return '';
-            return `
-                <div class="sensor-summary-item" data-sensor="${sensorId}">
-                    <div class="summary-icon sensor-icon ${sensor.iconClass}">
-                        <i class="fas ${sensor.icon}"></i>
-                    </div>
-                    <div class="summary-info">
-                        <span class="summary-name">${sensor.name}</span>
-                        <span class="summary-value">${sensor.current.toFixed(1)} ${sensor.unit}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        grid.querySelectorAll('.sensor-summary-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const sensorId = item.dataset.sensor;
-                if (sensorId) this.showSensorModal(sensorId);
-            });
-        });
-    }
-    addAlert(sensor) {
-        const alert = {
-            id: Date.now(),
-            type: sensor.status,
-            sensor: sensor.name,
-            sensorId: sensor.id,
-            value: sensor.current,
-            unit: sensor.unit,
-            message: `${sensor.name} ${sensor.status === 'critical' ? 'kritik seviyede' : 'uyarı seviyesinde'}: ${sensor.current.toFixed(1)}${sensor.unit}`,
-            time: new Date()
-        };
-        const recent = this.state.alerts.find(a =>
-            a.sensorId === alert.sensorId &&
-            Date.now() - a.time.getTime() < 30000
-        );
-        if (recent) return;
-        this.state.alerts.unshift(alert);
-        if (this.state.alerts.length > 50) this.state.alerts.pop();
-        document.getElementById('sidebarAlertCount').textContent = this.state.alerts.length;
-        this.showToast(alert);
-        if (this.state.currentPage === 'alerts') {
-            this.renderAlertsList();
-        }
-    }
-    renderAlertsList(filter = 'all') {
-        const container = document.getElementById('alertsListFull');
-        if (!container) return;
-        let alerts = this.state.alerts;
-        if (filter !== 'all') {
-            alerts = alerts.filter(a => a.type === filter);
-        }
-        if (alerts.length === 0) {
-            container.innerHTML = `
-                <div class="no-alerts">
-                    <i class="fas fa-check-circle"></i>
-                    <p>Şu anda alarm bulunmuyor</p>
-                </div>
-            `;
-            return;
-        }
-        container.innerHTML = alerts.map(alert => `
-            <div class="alert-item ${alert.type}">
-                <div class="alert-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="alert-content">
-                    <div class="alert-title">${alert.sensor}</div>
-                    <div class="alert-message">${alert.message}</div>
-                    <div class="alert-time">${this.formatTime(alert.time)}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-    filterAlerts(filter) {
-        this.renderAlertsList(filter);
-    }
-    clearAlerts() {
-        this.state.alerts = [];
-        document.getElementById('sidebarAlertCount').textContent = '0';
-        this.renderAlertsList();
-    }
-    showSensorModal(sensorId) {
-        const sensor = this.sensors[sensorId];
-        if (!sensor) return;
-        const modal = document.getElementById('sensorDetailModal');
-        document.getElementById('modalSensorIcon').innerHTML = `<i class="fas ${sensor.icon}"></i>`;
-        document.getElementById('modalSensorName').textContent = sensor.name;
-        document.getElementById('modalSensorType').textContent = sensor.id;
-        document.getElementById('modalSensorValue').textContent = sensor.current.toFixed(1);
-        document.getElementById('modalSensorUnit').textContent = sensor.unit;
-        document.getElementById('modalSensorStatus').innerHTML = `<span class="status-badge ${sensor.status}">${sensor.status.toUpperCase()}</span>`;
-        document.getElementById('modalWarningThreshold').textContent = sensor.thresholds.warning + sensor.unit;
-        document.getElementById('modalCriticalThreshold').textContent = sensor.thresholds.critical + sensor.unit;
-        this.renderModalChart(sensor);
-        modal.classList.add('show');
-    }
-    renderModalChart(sensor) {
-        const canvas = document.getElementById('modalHistoryChart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.parentElement.offsetWidth;
-        canvas.height = 200;
-        const data = sensor.history.map(h => h.value);
-        if (data.length < 2) {
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.font = '14px Inter';
-            ctx.textAlign = 'center';
-            ctx.fillText('Henüz yeterli veri yok', canvas.width / 2, 100);
-            return;
-        }
-        const padding = 30;
-        const width = canvas.width - padding * 2;
-        const height = canvas.height - padding * 2;
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const range = max - min || 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const color = this.getSensorColor(sensor.id);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        data.forEach((v, i) => {
-            const x = padding + (i / (data.length - 1)) * width;
-            const y = padding + ((max - v) / range) * height;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-    }
-    hideModal() {
-        document.getElementById('sensorDetailModal')?.classList.remove('show');
-    }
-    showToast(alert) {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = `toast ${alert.type}`;
-        toast.innerHTML = `
-            <i class="fas fa-exclamation-triangle toast-icon"></i>
-            <div class="toast-content">
-                <div class="toast-title">${alert.sensor}</div>
-                <div class="toast-message">${alert.message}</div>
-            </div>
-        `;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'toastSlideIn 0.3s ease-out reverse';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-    }
-    startClock() {
-        const update = () => {
-            const now = new Date();
-            document.getElementById('systemTime').textContent = now.toLocaleTimeString('tr-TR');
-        };
-        update();
-        setInterval(update, 1000);
-    }
-    startAIRotation() {
-        let index = 0;
-        const update = () => {
-            const text = this.aiMessages[index];
-            const el = document.getElementById('aiAnalysisText');
-            const timeEl = document.getElementById('aiAnalysisTime');
-            if (el) {
-                el.style.opacity = '0';
-                setTimeout(() => {
-                    el.textContent = text;
-                    el.style.opacity = '1';
-                }, 300);
-            }
-            if (timeEl) {
-                timeEl.textContent = `${Math.floor(Math.random() * 5) + 1} dk önce`;
-            }
-            index = (index + 1) % this.aiMessages.length;
-        };
-        update();
-        setInterval(update, 15000);
-    }
-    resetPanelView() {
-        const cabinet = document.querySelector('.panel-cabinet');
-        if (cabinet) {
-            cabinet.style.transform = 'translate(-50%, -50%) rotateX(5deg) rotateY(-5deg)';
-        }
-    }
-    toggleGrid() {
-        const grid = document.getElementById('sceneGrid');
-        if (grid) {
-            grid.classList.toggle('hidden');
-            this.state.gridVisible = !this.state.gridVisible;
-        }
-    }
-    formatTime(date) {
-        return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    setValue(value) {
+        this.value = Math.max(this.min, Math.min(this.max, value));
+        this.render();
     }
 }
+
+// ============================================================================
+// MAIN DASHBOARD CLASS
+// ============================================================================
+
+class ModernFireDashboard {
+    constructor() {
+        this.sensors = this.initializeSensors();
+        this.systemState = {
+            connectionStatus: 'connecting',
+            lastUpdate: null,
+            alertCount: 0,
+            boardHealth: 100
+        };
+        this.charts = new Map();
+        this.gauges = new Map();
+        this.digitalTwin = null;
+        this.currentPage = 'dashboard';
+        this.selectedDevice = 'all';
+
+        this.init();
+    }
+
+    initializeSensors() {
+        return {
+            'temperature': { value: 0, unit: '°C', min: -20, max: 80, history: [], status: 'normal', trend: 'stable', label: 'Temperature' },
+            'humidity': { value: 0, unit: '%', min: 0, max: 100, history: [], status: 'normal', trend: 'stable', label: 'Humidity' },
+            'gas': { value: 0, unit: 'kOhm', min: 0, max: 500, history: [], status: 'normal', trend: 'stable', label: 'Gas Resistance' },
+            'air-quality': { value: 0, unit: 'IAQ', min: 0, max: 500, history: [], status: 'normal', trend: 'stable', label: 'Air Quality' },
+            'no2': { value: 0, unit: 'ppm', min: 0, max: 10, history: [], status: 'normal', trend: 'stable', label: 'NO2' },
+            'co': { value: 0, unit: 'ppm', min: 0, max: 100, history: [], status: 'normal', trend: 'stable', label: 'CO' },
+            'tvoc': { value: 0, unit: 'ppb', min: 0, max: 1000, history: [], status: 'normal', trend: 'stable', label: 'TVOC' },
+            'eco2': { value: 0, unit: 'ppm', min: 400, max: 5000, history: [], status: 'normal', trend: 'stable', label: 'eCO2' },
+            'surface-temp': { value: 0, unit: '°C', min: -20, max: 150, history: [], status: 'normal', trend: 'stable', label: 'Surface Temp 1' },
+            'surface-temp-2': { value: 0, unit: '°C', min: -20, max: 150, history: [], status: 'normal', trend: 'stable', label: 'Surface Temp 2' },
+            'pressure': { value: 0, unit: 'hPa', min: 900, max: 1100, history: [], status: 'normal', trend: 'stable', label: 'Pressure' },
+            'current': { value: 0, unit: 'mA', min: 0, max: 1000, history: [], status: 'normal', trend: 'stable', label: 'Current' }
+        };
+    }
+
+    async init() {
+        // Boot sequence
+        const bootSequence = new BootSequence();
+        await bootSequence.start();
+
+        // Initialize components
+        this.initializeNavigation();
+        this.initializeCharts();
+        this.initializeGauges();
+        this.initializeDigitalTwin();
+        this.initializeDeviceSelector();
+        this.initializeEventListeners();
+
+        // Update timestamp
+        this.updateTimestamp();
+        setInterval(() => this.updateTimestamp(), 1000);
+
+        // Process pending MQTT data if any
+        if (window.pendingMQTTData) {
+            this.updateDashboardFromMQTT(window.pendingMQTTData.sensorData, window.pendingMQTTData.anomalySensorIds);
+            window.pendingMQTTData = null;
+        }
+
+        // Expose to window for MQTT integration
+        window.modernFireDashboard = this;
+    }
+
+    initializeNavigation() {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                this.switchPage(page);
+
+                navItems.forEach(ni => ni.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+    }
+
+    switchPage(page) {
+        this.currentPage = page;
+
+        document.querySelectorAll('.page').forEach(p => {
+            p.classList.remove('active');
+        });
+
+        const targetPage = document.getElementById(`${page}Page`);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
+    }
+
+    initializeCharts() {
+        const chartConfigs = {
+            'temperature': { color: '#e63946', glowColor: '#ff6b6b', min: -20, max: 80, unit: '°C' },
+            'humidity': { color: '#45a29e', glowColor: '#66fcf1', min: 0, max: 100, unit: '%' },
+            'gas': { color: '#ff9f1c', glowColor: '#ffbe0b', min: 0, max: 500, unit: 'kOhm' },
+            'air-quality': { color: '#8338ec', glowColor: '#b185db', min: 0, max: 500, unit: 'IAQ' },
+            'no2': { color: '#3a86ff', glowColor: '#72a8ff', min: 0, max: 10, unit: 'ppm' },
+            'co': { color: '#ff006e', glowColor: '#ff5c9e', min: 0, max: 100, unit: 'ppm' },
+            'tvoc': { color: '#fb5607', glowColor: '#ff8a4c', min: 0, max: 1000, unit: 'ppb' },
+            'eco2': { color: '#8ac926', glowColor: '#b3e048', min: 400, max: 5000, unit: 'ppm' },
+            'surface-temp': { color: '#e63946', glowColor: '#ff6b6b', min: -20, max: 150, unit: '°C' },
+            'surface-temp-2': { color: '#f77f00', glowColor: '#ffa94d', min: -20, max: 150, unit: '°C' },
+            'pressure': { color: '#4361ee', glowColor: '#738eff', min: 900, max: 1100, unit: 'hPa' },
+            'current': { color: '#7209b7', glowColor: '#9d4edd', min: 0, max: 1000, unit: 'mA' }
+        };
+
+        Object.entries(chartConfigs).forEach(([sensorId, config]) => {
+            const canvas = document.getElementById(`${sensorId}Chart`);
+            if (canvas) {
+                const chart = new OscilloscopeChart(canvas, {
+                    ...config,
+                    label: this.sensors[sensorId]?.label || sensorId
+                });
+                this.charts.set(sensorId, chart);
+            }
+        });
+    }
+
+    initializeGauges() {
+        const gaugeConfigs = {
+            'gauge1': { label: 'TEMP', unit: '°C', min: 0, max: 100, warningThreshold: 60, criticalThreshold: 80 },
+            'gauge2': { label: 'HUM', unit: '%', min: 0, max: 100, warningThreshold: 70, criticalThreshold: 85 },
+            'gauge3': { label: 'CO', unit: 'ppm', min: 0, max: 100, warningThreshold: 35, criticalThreshold: 70 },
+            'gauge4': { label: 'IAQ', unit: '', min: 0, max: 500, warningThreshold: 150, criticalThreshold: 250 }
+        };
+
+        Object.entries(gaugeConfigs).forEach(([id, config]) => {
+            const container = document.getElementById(id);
+            if (container) {
+                const gauge = new CockpitGauge(container, config);
+                this.gauges.set(id, gauge);
+            }
+        });
+    }
+
+    initializeDigitalTwin() {
+        this.digitalTwin = new DigitalTwin('threejsContainer');
+    }
+
+    initializeDeviceSelector() {
+        const selector = document.getElementById('deviceSelector');
+        if (selector) {
+            selector.addEventListener('change', (e) => {
+                this.selectedDevice = e.target.value;
+                this.filterByDevice();
+            });
+        }
+    }
+
+    filterByDevice() {
+        console.log(`Filtering by device: ${this.selectedDevice}`);
+    }
+
+    initializeEventListeners() {
+        // Modal close
+        const modal = document.getElementById('sensorModal');
+        const closeBtn = document.querySelector('.modal-close');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        }
+
+        // Sensor card clicks
+        document.querySelectorAll('.sensor-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const sensorId = card.dataset.sensor;
+                this.showSensorDetail(sensorId);
+            });
+        });
+
+        // Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+
+    showSensorDetail(sensorId) {
+        const sensor = this.sensors[sensorId];
+        if (!sensor) return;
+
+        const modal = document.getElementById('sensorModal');
+        const title = document.getElementById('modalSensorTitle');
+        const content = document.getElementById('modalSensorContent');
+
+        if (title) {
+            title.textContent = sensor.label;
+        }
+
+        if (content) {
+            content.innerHTML = `
+                <div class="modal-stats">
+                    <div class="modal-stat">
+                        <span class="stat-label">Current Value</span>
+                        <span class="stat-value">${sensor.value.toFixed(2)} ${sensor.unit}</span>
+                    </div>
+                    <div class="modal-stat">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value status-${sensor.status}">${sensor.status.toUpperCase()}</span>
+                    </div>
+                    <div class="modal-stat">
+                        <span class="stat-label">Trend</span>
+                        <span class="stat-value">${sensor.trend}</span>
+                    </div>
+                    <div class="modal-stat">
+                        <span class="stat-label">Range</span>
+                        <span class="stat-value">${sensor.min} - ${sensor.max} ${sensor.unit}</span>
+                    </div>
+                </div>
+                <div class="modal-history">
+                    <h4>Recent History</h4>
+                    <div class="history-values">
+                        ${sensor.history.slice(-10).map(v => `<span>${v.toFixed(1)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+
+    updateSensorValue(sensorId, value) {
+        const sensor = this.sensors[sensorId];
+        if (!sensor) return;
+
+        sensor.value = value;
+
+        // Update DOM
+        const valueEl = document.querySelector(`[data-sensor="${sensorId}"] .sensor-value`);
+        if (valueEl) {
+            valueEl.textContent = value.toFixed(2);
+        }
+    }
+
+    updateSensorHistory(sensorId, value) {
+        const sensor = this.sensors[sensorId];
+        if (!sensor) return;
+
+        sensor.history.push(value);
+        if (sensor.history.length > CONFIG.oscilloscope.maxPoints) {
+            sensor.history.shift();
+        }
+    }
+
+    updateTrendIndicator(sensorId) {
+        const sensor = this.sensors[sensorId];
+        if (!sensor || sensor.history.length < 3) return;
+
+        const recent = sensor.history.slice(-5);
+        const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const lastValue = recent[recent.length - 1];
+        const diff = lastValue - avg;
+        const threshold = (sensor.max - sensor.min) * 0.02;
+
+        if (diff > threshold) {
+            sensor.trend = 'rising';
+        } else if (diff < -threshold) {
+            sensor.trend = 'falling';
+        } else {
+            sensor.trend = 'stable';
+        }
+    }
+
+    updateStatusBadge(sensorId, status) {
+        const badge = document.querySelector(`[data-sensor="${sensorId}"] .status-badge`);
+        if (badge) {
+            badge.className = `status-badge ${status}`;
+            badge.textContent = status.toUpperCase();
+        }
+    }
+
+    updateTrendDisplay(sensorId, trend) {
+        const trendEl = document.querySelector(`[data-sensor="${sensorId}"] .trend-indicator`);
+        if (trendEl) {
+            trendEl.className = `trend-indicator ${trend}`;
+            const icons = { rising: '↑', falling: '↓', stable: '→' };
+            trendEl.textContent = icons[trend] || '→';
+        }
+    }
+
+    updateCardStyling(sensorId, status) {
+        const card = document.querySelector(`[data-sensor="${sensorId}"]`);
+        if (card) {
+            card.classList.remove('status-normal', 'status-warning', 'status-critical');
+            card.classList.add(`status-${status}`);
+        }
+    }
+
+    renderChart(sensorId) {
+        const chart = this.charts.get(sensorId);
+        const sensor = this.sensors[sensorId];
+
+        if (chart && sensor) {
+            chart.addPoint(sensor.value);
+
+            // Update color based on status
+            if (sensor.status === 'critical') {
+                chart.setColor('#e63946', '#ff6b6b');
+            } else if (sensor.status === 'warning') {
+                chart.setColor('#ff9f1c', '#ffbe0b');
+            }
+        }
+    }
+
+    updateSystemStatus() {
+        // Count alerts
+        let criticalCount = 0;
+        let warningCount = 0;
+
+        Object.values(this.sensors).forEach(sensor => {
+            if (sensor.status === 'critical') criticalCount++;
+            else if (sensor.status === 'warning') warningCount++;
+        });
+
+        this.systemState.alertCount = criticalCount + warningCount;
+
+        // Update alert badge
+        const alertBadge = document.querySelector('.alert-badge');
+        if (alertBadge) {
+            alertBadge.textContent = this.systemState.alertCount;
+            alertBadge.style.display = this.systemState.alertCount > 0 ? 'flex' : 'none';
+        }
+
+        // Update header stats
+        const activeSensors = document.getElementById('activeSensors');
+        if (activeSensors) {
+            activeSensors.textContent = Object.keys(this.sensors).length;
+        }
+
+        const alertCount = document.getElementById('alertCount');
+        if (alertCount) {
+            alertCount.textContent = criticalCount;
+        }
+
+        // Update board health
+        const boardHealth = document.getElementById('boardHealth');
+        if (boardHealth) {
+            boardHealth.textContent = `${this.systemState.boardHealth}%`;
+        }
+
+        // Alarm vignette
+        const vignette = document.getElementById('alarmVignette');
+        if (vignette) {
+            if (criticalCount > 0) {
+                vignette.classList.add('active');
+            } else {
+                vignette.classList.remove('active');
+            }
+        }
+
+        // Update cockpit gauges
+        this.updateGauges();
+    }
+
+    updateGauges() {
+        const gauge1 = this.gauges.get('gauge1');
+        const gauge2 = this.gauges.get('gauge2');
+        const gauge3 = this.gauges.get('gauge3');
+        const gauge4 = this.gauges.get('gauge4');
+
+        if (gauge1 && this.sensors['temperature']) {
+            gauge1.setValue(this.sensors['temperature'].value);
+        }
+        if (gauge2 && this.sensors['humidity']) {
+            gauge2.setValue(this.sensors['humidity'].value);
+        }
+        if (gauge3 && this.sensors['co']) {
+            gauge3.setValue(this.sensors['co'].value);
+        }
+        if (gauge4 && this.sensors['air-quality']) {
+            gauge4.setValue(this.sensors['air-quality'].value);
+        }
+    }
+
+    updateTimestamp() {
+        const timestampEl = document.getElementById('lastUpdate');
+        if (timestampEl) {
+            const now = new Date();
+            timestampEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Update live indicator pulse
+        const liveIndicator = document.querySelector('.live-indicator');
+        if (liveIndicator) {
+            liveIndicator.classList.add('pulse');
+            setTimeout(() => liveIndicator.classList.remove('pulse'), 500);
+        }
+    }
+
+    updateDashboardFromMQTT(sensorData, anomalySensorIds = []) {
+        Object.entries(sensorData).forEach(([sensorId, value]) => {
+            if (this.sensors[sensorId]) {
+                // Update sensor status
+                this.sensors[sensorId].status = anomalySensorIds.includes(sensorId) ? 'critical' : 'normal';
+
+                // Update values
+                this.updateSensorHistory(sensorId, parseFloat(value.toFixed(2)));
+                this.updateSensorValue(sensorId, value);
+                this.updateTrendIndicator(sensorId);
+                this.updateStatusBadge(sensorId, this.sensors[sensorId].status);
+                this.updateTrendDisplay(sensorId, this.sensors[sensorId].trend);
+                this.updateCardStyling(sensorId, this.sensors[sensorId].status);
+                this.renderChart(sensorId);
+
+                // Update Digital Twin
+                if (this.digitalTwin) {
+                    this.digitalTwin.updateSensorStatus(sensorId, this.sensors[sensorId].status, value);
+                }
+            }
+        });
+
+        this.updateSystemStatus();
+        this.systemState.lastUpdate = new Date();
+    }
+
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">${type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ'}</div>
+            <div class="toast-message">${message}</div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+}
+
+// ============================================================================
+// ENERGY FLOW VISUALIZATION
+// ============================================================================
+
+class EnergyFlowVisualization {
+    constructor(svgElement) {
+        this.svg = svgElement;
+        this.paths = [];
+        this.init();
+    }
+
+    init() {
+        if (!this.svg) return;
+
+        this.createFlowPaths();
+        this.animate();
+    }
+
+    createFlowPaths() {
+        // Create animated flow lines
+        const pathsData = [
+            'M 50,20 Q 100,50 150,30 T 250,50',
+            'M 50,50 Q 100,80 150,60 T 250,80',
+            'M 50,80 Q 100,110 150,90 T 250,110'
+        ];
+
+        pathsData.forEach((d, i) => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('class', `flow-path flow-path-${i}`);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', 'url(#flowGradient)');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('stroke-dasharray', '10,10');
+            this.svg.appendChild(path);
+            this.paths.push(path);
+        });
+
+        // Add gradient definition
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.innerHTML = `
+            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#45a29e;stop-opacity:0"/>
+                <stop offset="50%" style="stop-color:#66fcf1;stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:#45a29e;stop-opacity:0"/>
+            </linearGradient>
+        `;
+        this.svg.insertBefore(defs, this.svg.firstChild);
+    }
+
+    animate() {
+        let offset = 0;
+
+        const step = () => {
+            offset -= 0.5;
+            this.paths.forEach((path, i) => {
+                path.setAttribute('stroke-dashoffset', offset + i * 5);
+            });
+            requestAnimationFrame(step);
+        };
+
+        step();
+    }
+}
+
+// ============================================================================
+// ACTIVITY CHART
+// ============================================================================
+
+class ActivityChart {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.data = this.generateMockData();
+        this.render();
+    }
+
+    generateMockData() {
+        const data = [];
+        for (let i = 0; i < 24; i++) {
+            data.push({
+                hour: i,
+                alerts: Math.floor(Math.random() * 10),
+                readings: Math.floor(Math.random() * 100) + 50
+            });
+        }
+        return data;
+    }
+
+    render() {
+        if (!this.container) return;
+
+        const maxAlerts = Math.max(...this.data.map(d => d.alerts));
+
+        let barsHtml = this.data.map(d => {
+            const height = (d.alerts / maxAlerts) * 100;
+            const alertClass = d.alerts > 7 ? 'critical' : d.alerts > 4 ? 'warning' : 'normal';
+            return `
+                <div class="activity-bar-wrapper">
+                    <div class="activity-bar ${alertClass}" style="height: ${height}%"></div>
+                    <span class="activity-hour">${d.hour}h</span>
+                </div>
+            `;
+        }).join('');
+
+        this.container.innerHTML = `
+            <div class="activity-bars">${barsHtml}</div>
+        `;
+    }
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
-    window.aico3D = new AICO3DDashboard();
+    // Initialize main dashboard
+    window.modernFireDashboard = new ModernFireDashboard();
+
+    // Initialize energy flow
+    const energySvg = document.getElementById('energyFlow');
+    if (energySvg) {
+        new EnergyFlowVisualization(energySvg);
+    }
+
+    // Initialize activity chart
+    new ActivityChart('activityChart');
+});
+
+// Handle page visibility for performance
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        console.log('Dashboard paused');
+    } else {
+        console.log('Dashboard resumed');
+    }
 });
