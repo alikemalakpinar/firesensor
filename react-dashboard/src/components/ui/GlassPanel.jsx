@@ -127,28 +127,30 @@ const GlassPanel = forwardRef(
         : {},
     };
 
-    const Component = animated ? motion.div : 'div';
+    const combinedClassName = `
+      ${baseStyles}
+      ${variantStyles[variant]}
+      ${sizeStyles[size]}
+      ${hoverStyles}
+      ${glowStyles}
+      ${onClick ? 'cursor-pointer' : ''}
+      ${className}
+    `;
 
-    return (
-      <Component
-        ref={ref}
-        className={`
-          ${baseStyles}
-          ${variantStyles[variant]}
-          ${sizeStyles[size]}
-          ${hoverStyles}
-          ${glowStyles}
-          ${onClick ? 'cursor-pointer' : ''}
-          ${className}
-        `}
-        onClick={onClick}
-        variants={motionVariants}
-        initial="initial"
-        animate="animate"
-        whileHover={hover ? 'hover' : undefined}
-        whileTap={onClick ? 'tap' : undefined}
-        {...props}
-      >
+    // Motion props only for animated components
+    const motionProps = animated
+      ? {
+          variants: motionVariants,
+          initial: 'initial',
+          animate: 'animate',
+          whileHover: hover ? 'hover' : undefined,
+          whileTap: onClick ? 'tap' : undefined,
+        }
+      : {};
+
+    // Shared inner content
+    const innerContent = (
+      <>
         {/* Noise texture overlay */}
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
@@ -172,7 +174,26 @@ const GlassPanel = forwardRef(
 
         {/* Gradient overlay at top */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      </Component>
+      </>
+    );
+
+    if (animated) {
+      return (
+        <motion.div
+          ref={ref}
+          className={combinedClassName}
+          onClick={onClick}
+          {...motionProps}
+        >
+          {innerContent}
+        </motion.div>
+      );
+    }
+
+    return (
+      <div ref={ref} className={combinedClassName} onClick={onClick} {...props}>
+        {innerContent}
+      </div>
     );
   }
 );
