@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSensorStore } from '../../stores/useSensorStore';
 
@@ -183,8 +184,12 @@ function CornerAccent({ position, color, subtle = false }) {
  */
 export function AlertBanner() {
   const systemStatus = useSensorStore((state) => state.systemStatus);
-  const criticalSensors = useSensorStore((state) =>
-    Object.values(state.sensors).filter((s) => s.status === 'critical')
+  const sensors = useSensorStore((state) => state.sensors);
+
+  // Memoize the filtered list to avoid infinite re-renders
+  const criticalSensors = useMemo(
+    () => Object.values(sensors).filter((s) => s.status === 'critical'),
+    [sensors]
   );
 
   return (
