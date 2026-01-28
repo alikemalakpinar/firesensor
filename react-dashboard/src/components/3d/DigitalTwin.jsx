@@ -3,8 +3,6 @@ import { Canvas, useThree } from '@react-three/fiber';
 import {
   OrbitControls,
   PerspectiveCamera,
-  Environment,
-  Stars,
 } from '@react-three/drei';
 import {
   EffectComposer,
@@ -16,24 +14,29 @@ import {
 import { BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 
-import { Building, ParticleField } from './Building';
+import { Building, EmberParticles } from './Building';
 import { SensorNodes } from './SensorNode';
 import { useSensorStore } from '../../stores/useSensorStore';
 
 /**
- * SceneLighting - Sets up the lighting for the scene
+ * MagmaLighting - Warm industrial lighting setup
+ *
+ * "Magma & Obsidian" aesthetic:
+ * - Warm amber/orange accent lights
+ * - Deep shadows for dramatic effect
+ * - Subtle rim lighting
  */
-function SceneLighting() {
+function MagmaLighting() {
   return (
     <>
-      {/* Ambient light for base visibility */}
-      <ambientLight intensity={0.2} color="#1a1a2e" />
+      {/* Ambient - very low, dark scene */}
+      <ambientLight intensity={0.15} color="#1a1210" />
 
-      {/* Main directional light */}
+      {/* Main directional - warm tinted */}
       <directionalLight
         position={[10, 20, 10]}
-        intensity={0.5}
-        color="#ffffff"
+        intensity={0.4}
+        color="#FFE4C4"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-far={50}
@@ -43,40 +46,50 @@ function SceneLighting() {
         shadow-camera-bottom={-20}
       />
 
-      {/* Accent lighting - Cyan from left */}
+      {/* Left accent - burnt orange */}
       <pointLight
-        position={[-10, 10, 5]}
-        intensity={2}
-        color="#00F0FF"
-        distance={30}
-        decay={2}
-      />
-
-      {/* Accent lighting - Teal from right */}
-      <pointLight
-        position={[15, 5, -10]}
-        intensity={1.5}
-        color="#0F3D3E"
+        position={[-12, 8, 5]}
+        intensity={3}
+        color="#FF4500"
         distance={25}
         decay={2}
       />
 
-      {/* Top-down subtle blue */}
+      {/* Right accent - deep amber */}
       <pointLight
-        position={[0, 15, 0]}
-        intensity={0.8}
-        color="#4a9eff"
+        position={[15, 6, -8]}
+        intensity={2}
+        color="#FF8C00"
         distance={20}
         decay={2}
       />
 
-      {/* Rim light from behind */}
+      {/* Top-down subtle warm */}
+      <pointLight
+        position={[0, 15, 0]}
+        intensity={1}
+        color="#FF6B35"
+        distance={25}
+        decay={2}
+      />
+
+      {/* Rim light from behind - ember glow */}
       <spotLight
-        position={[0, 10, -15]}
-        angle={0.5}
+        position={[0, 8, -18]}
+        angle={0.6}
         penumbra={1}
+        intensity={1.5}
+        color="#FF4500"
+        distance={30}
+      />
+
+      {/* Ground bounce light */}
+      <pointLight
+        position={[0, 0.5, 0]}
         intensity={0.5}
-        color="#00F0FF"
+        color="#DC2F02"
+        distance={15}
+        decay={2}
       />
     </>
   );
@@ -100,7 +113,6 @@ function CameraController() {
         sensor.position.z
       );
 
-      // Animate camera to look at sensor
       if (controlsRef.current) {
         controlsRef.current.target.copy(targetPosition);
       }
@@ -113,12 +125,12 @@ function CameraController() {
       enablePan={true}
       enableZoom={true}
       enableRotate={true}
-      minDistance={10}
-      maxDistance={50}
+      minDistance={12}
+      maxDistance={45}
       minPolarAngle={Math.PI / 6}
-      maxPolarAngle={Math.PI / 2.2}
-      autoRotate={false}
-      autoRotateSpeed={0.5}
+      maxPolarAngle={Math.PI / 2.1}
+      autoRotate={true}
+      autoRotateSpeed={0.3}
       dampingFactor={0.05}
       enableDamping
       target={[0, 4, 0]}
@@ -127,43 +139,43 @@ function CameraController() {
 }
 
 /**
- * PostProcessing - Adds visual effects to the scene
+ * MagmaPostProcessing - Heavy bloom for heated metal look
  */
-function PostProcessing() {
+function MagmaPostProcessing() {
   const systemStatus = useSensorStore((state) => state.systemStatus);
   const isCritical = systemStatus === 'critical';
 
   return (
     <EffectComposer>
-      {/* Bloom for glowing effects - THE KEY to neon aesthetics */}
+      {/* Heavy bloom for that "glowing heat" effect */}
       <Bloom
-        intensity={1.5}
-        luminanceThreshold={0.2}
+        intensity={isCritical ? 2.5 : 1.8}
+        luminanceThreshold={0.15}
         luminanceSmoothing={0.9}
         mipmapBlur
-        radius={0.8}
+        radius={0.85}
       />
 
-      {/* Chromatic aberration for tech feel */}
+      {/* Chromatic aberration - stronger for critical */}
       <ChromaticAberration
         blendFunction={BlendFunction.NORMAL}
-        offset={isCritical ? [0.003, 0.003] : [0.001, 0.001]}
-        radialModulation={false}
-        modulationOffset={0.5}
+        offset={isCritical ? [0.004, 0.004] : [0.0015, 0.0015]}
+        radialModulation={true}
+        modulationOffset={0.3}
       />
 
-      {/* Vignette for cinematic look */}
+      {/* Dark vignette for cinematic feel */}
       <VignetteEffect
-        offset={0.3}
-        darkness={0.7}
+        offset={0.35}
+        darkness={0.8}
         blendFunction={BlendFunction.NORMAL}
       />
 
-      {/* Subtle noise for film grain */}
+      {/* Film grain */}
       <Noise
         premultiply
-        blendFunction={BlendFunction.OVERLAY}
-        opacity={0.03}
+        blendFunction={BlendFunction.SOFT_LIGHT}
+        opacity={0.04}
       />
     </EffectComposer>
   );
@@ -178,8 +190,8 @@ function Scene({ onSensorClick }) {
       {/* Camera setup */}
       <PerspectiveCamera
         makeDefault
-        position={[20, 15, 20]}
-        fov={50}
+        position={[22, 14, 22]}
+        fov={45}
         near={0.1}
         far={1000}
       />
@@ -187,19 +199,8 @@ function Scene({ onSensorClick }) {
       {/* Camera controls */}
       <CameraController />
 
-      {/* Lighting */}
-      <SceneLighting />
-
-      {/* Background stars */}
-      <Stars
-        radius={100}
-        depth={50}
-        count={3000}
-        factor={4}
-        saturation={0}
-        fade
-        speed={0.5}
-      />
+      {/* Magma lighting */}
+      <MagmaLighting />
 
       {/* Main building structure */}
       <Building />
@@ -207,23 +208,23 @@ function Scene({ onSensorClick }) {
       {/* Sensor nodes */}
       <SensorNodes onSensorClick={onSensorClick} />
 
-      {/* Atmospheric particles */}
-      <ParticleField count={150} />
+      {/* Floating ember particles */}
+      <EmberParticles count={80} />
 
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#050510', 30, 80]} />
+      {/* Dark fog for depth */}
+      <fog attach="fog" args={['#0A0A0A', 25, 70]} />
     </>
   );
 }
 
 /**
- * LoadingFallback - Displayed while 3D assets load
+ * LoadingFallback - Ember-colored loading indicator
  */
 function LoadingFallback() {
   return (
     <mesh>
       <boxGeometry args={[2, 2, 2]} />
-      <meshBasicMaterial color="#00F0FF" wireframe />
+      <meshBasicMaterial color="#FF4500" wireframe />
     </mesh>
   );
 }
@@ -231,9 +232,11 @@ function LoadingFallback() {
 /**
  * DigitalTwin - Main component that renders the 3D facility visualization
  *
- * Props:
- * - onSensorClick: Callback when a sensor node is clicked
- * - className: Additional CSS classes
+ * "Magma & Obsidian" theme with:
+ * - Matte black metal building
+ * - Pulsing ember sensor nodes
+ * - Heavy bloom post-processing
+ * - Warm industrial lighting
  */
 export function DigitalTwin({ onSensorClick, className = '' }) {
   return (
@@ -246,14 +249,16 @@ export function DigitalTwin({ onSensorClick, className = '' }) {
           alpha: false,
           powerPreference: 'high-performance',
           stencil: false,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2,
         }}
-        style={{ background: '#050505' }}
+        style={{ background: '#0A0A0A' }}
       >
-        <color attach="background" args={['#050505']} />
+        <color attach="background" args={['#0A0A0A']} />
 
         <Suspense fallback={<LoadingFallback />}>
           <Scene onSensorClick={onSensorClick} />
-          <PostProcessing />
+          <MagmaPostProcessing />
         </Suspense>
       </Canvas>
     </div>

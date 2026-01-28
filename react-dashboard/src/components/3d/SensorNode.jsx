@@ -4,29 +4,43 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSensorStore } from '../../stores/useSensorStore';
 
-// Status colors
-const STATUS_COLORS = {
-  normal: new THREE.Color('#00F0FF'),    // Electric Cyan
-  warning: new THREE.Color('#FFB30F'),   // Amber
-  critical: new THREE.Color('#FF2A6D'),  // Neon Red
-  offline: new THREE.Color('#6c757d'),   // Gray
+// Ember color palette for sensor nodes
+const EMBER_COLORS = {
+  normal: {
+    core: new THREE.Color('#FF6B35'),      // Warm ember
+    glow: new THREE.Color('#FF8C00'),      // Deep amber
+    intensity: 1.5,
+  },
+  warning: {
+    core: new THREE.Color('#FFBA08'),      // Warning yellow
+    glow: new THREE.Color('#FF8C00'),      // Amber
+    intensity: 2.5,
+  },
+  critical: {
+    core: new THREE.Color('#FF0000'),      // Strobe red
+    glow: new THREE.Color('#FFFFFF'),      // White hot
+    intensity: 5,
+  },
+  offline: {
+    core: new THREE.Color('#4A4A4A'),      // Warm grey
+    glow: new THREE.Color('#2D2D2D'),      // Tungsten
+    intensity: 0.3,
+  },
 };
 
 /**
- * SensorNode - 3D representation of a sensor in the Digital Twin
+ * SensorNode - Pulsing Ember Sensor Representation
  *
- * Features:
- * - Glowing core sphere
- * - Rotating outer ring
- * - Pulsing animation based on status
- * - Connection line to floor
- * - Interactive tooltip on hover
+ * "Magma & Obsidian" aesthetic:
+ * - Normal: Dim warm orange glow (like a dying coal)
+ * - Alert: Flares bright red/white (like ignited magnesium)
+ * - Heavy bloom effect for that heated metal look
  */
 export function SensorNode({ sensorId, position, onClick }) {
   const groupRef = useRef();
   const coreRef = useRef();
-  const ringRef = useRef();
-  const pulseRef = useRef();
+  const glowRef = useRef();
+  const outerGlowRef = useRef();
   const lineRef = useRef();
 
   const sensor = useSensorStore((state) => state.sensors[sensorId]);
@@ -34,74 +48,37 @@ export function SensorNode({ sensorId, position, onClick }) {
   const selectSensor = useSensorStore((state) => state.selectSensor);
 
   const isSelected = selectedSensor === sensorId;
-  const statusColor = STATUS_COLORS[sensor?.status || 'normal'];
+  const status = sensor?.status || 'normal';
+  const colors = EMBER_COLORS[status] || EMBER_COLORS.normal;
 
-  // Memoize materials
-  const materials = useMemo(() => ({
-    core: new THREE.MeshStandardMaterial({
-      color: statusColor,
-      emissive: statusColor,
-      emissiveIntensity: 2,
-      transparent: true,
-      opacity: 0.9,
-    }),
-    ring: new THREE.MeshBasicMaterial({
-      color: statusColor,
-      transparent: true,
-      opacity: 0.6,
-      side: THREE.DoubleSide,
-    }),
-    pulse: new THREE.MeshBasicMaterial({
-      color: statusColor,
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.DoubleSide,
-    }),
-    line: new THREE.LineBasicMaterial({
-      color: statusColor,
-      transparent: true,
-      opacity: 0.4,
-    }),
-  }), [statusColor]);
-
-  // Animation
-  useFrame((state) => {
-    const time = state.clock.elapsedTime;
-    const isCritical = sensor?.status === 'critical';
-
-    // Core glow pulse
-    if (coreRef.current) {
-      const pulseIntensity = isCritical
-        ? 2 + Math.sin(time * 8) * 1.5 // Fast pulse for critical
-        : 2 + Math.sin(time * 2) * 0.5; // Slow pulse for normal
-      coreRef.current.material.emissiveIntensity = pulseIntensity;
-
-      // Slight floating motion
-      coreRef.current.position.y = Math.sin(time * 1.5) * 0.05;
-    }
-
-    // Rotating ring
-    if (ringRef.current) {
-      ringRef.current.rotation.z = time * 0.5;
-      ringRef.current.rotation.x = Math.sin(time * 0.3) * 0.2;
-    }
-
-    // Expanding pulse
-    if (pulseRef.current) {
-      const scale = 1 + Math.sin(time * 2) * 0.3;
-      pulseRef.current.scale.set(scale, scale, 1);
-      pulseRef.current.material.opacity = 0.3 * (1 - Math.sin(time * 2) * 0.5);
-    }
-
-    // Selected state - larger scale
-    if (groupRef.current) {
-      const targetScale = isSelected ? 1.3 : 1;
-      groupRef.current.scale.lerp(
-        new THREE.Vector3(targetScale, targetScale, targetScale),
-        0.1
-      );
-    }
-  });
+  // Create materials with current colors
+  const materials = useMemo(() => {
+    return {
+      core: new THREE.MeshStandardMaterial({
+        color: colors.core,
+        emissive: colors.core,
+        emissiveIntensity: colors.intensity,
+        metalness: 0.3,
+        roughness: 0.4,
+      }),
+      glow: new THREE.MeshBasicMaterial({
+        color: colors.glow,
+        transparent: true,
+        opacity: 0.6,
+      }),
+      outerGlow: new THREE.MeshBasicMaterial({
+        color: colors.core,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.BackSide,
+      }),
+      line: new THREE.LineBasicMaterial({
+        color: colors.core,
+        transparent: true,
+        opacity: 0.4,
+      }),
+    };
+  }, [colors]);
 
   // Connection line geometry
   const lineGeometry = useMemo(() => {
@@ -111,6 +88,69 @@ export function SensorNode({ sensorId, position, onClick }) {
     ];
     return new THREE.BufferGeometry().setFromPoints(points);
   }, [position.y]);
+
+  // Animation
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    const isCritical = status === 'critical';
+    const isWarning = status === 'warning';
+
+    // Core ember pulse - breathing like a coal
+    if (coreRef.current) {
+      let pulseSpeed = 1.5;
+      let pulseRange = 0.3;
+
+      if (isCritical) {
+        // Fast intense pulse for critical
+        pulseSpeed = 8;
+        pulseRange = 2;
+      } else if (isWarning) {
+        pulseSpeed = 3;
+        pulseRange = 0.8;
+      }
+
+      const pulse = colors.intensity + Math.sin(time * pulseSpeed) * pulseRange;
+      coreRef.current.material.emissiveIntensity = pulse;
+
+      // Subtle scale breathing
+      const breathe = 1 + Math.sin(time * pulseSpeed * 0.5) * 0.05;
+      coreRef.current.scale.setScalar(breathe);
+    }
+
+    // Inner glow animation
+    if (glowRef.current) {
+      const glowPulse = isCritical
+        ? 0.8 + Math.sin(time * 10) * 0.2
+        : 0.4 + Math.sin(time * 2) * 0.2;
+      glowRef.current.material.opacity = glowPulse;
+      glowRef.current.rotation.y = time * 0.5;
+    }
+
+    // Outer glow for critical - white hot flash
+    if (outerGlowRef.current) {
+      if (isCritical) {
+        const flash = 0.3 + Math.sin(time * 12) * 0.25;
+        outerGlowRef.current.material.opacity = flash;
+      } else {
+        outerGlowRef.current.material.opacity = 0.1;
+      }
+    }
+
+    // Connection line pulse for critical
+    if (lineRef.current && isCritical) {
+      const flash = 0.4 + Math.sin(time * 8) * 0.3;
+      lineRef.current.material.opacity = flash;
+    }
+
+    // Selected state - larger scale
+    if (groupRef.current) {
+      const targetScale = isSelected ? 1.4 : 1;
+      groupRef.current.scale.lerp(
+        new THREE.Vector3(targetScale, targetScale, targetScale),
+        0.1
+      );
+    }
+  });
 
   if (!sensor) return null;
 
@@ -126,22 +166,22 @@ export function SensorNode({ sensorId, position, onClick }) {
       position={[position.x, position.y, position.z]}
       onClick={handleClick}
     >
-      {/* Core sphere - main glowing element */}
+      {/* Core ember sphere */}
       <mesh ref={coreRef}>
-        <sphereGeometry args={[0.25, 32, 32]} />
+        <sphereGeometry args={[0.3, 32, 32]} />
         <primitive object={materials.core} attach="material" />
       </mesh>
 
-      {/* Outer ring */}
-      <mesh ref={ringRef}>
-        <torusGeometry args={[0.4, 0.02, 16, 32]} />
-        <primitive object={materials.ring} attach="material" />
+      {/* Inner glow ring */}
+      <mesh ref={glowRef}>
+        <torusGeometry args={[0.45, 0.03, 16, 32]} />
+        <primitive object={materials.glow} attach="material" />
       </mesh>
 
-      {/* Pulse ring */}
-      <mesh ref={pulseRef} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.35, 0.5, 32]} />
-        <primitive object={materials.pulse} attach="material" />
+      {/* Outer glow sphere (for bloom) */}
+      <mesh ref={outerGlowRef} scale={1.5}>
+        <sphereGeometry args={[0.35, 16, 16]} />
+        <primitive object={materials.outerGlow} attach="material" />
       </mesh>
 
       {/* Connection line to floor */}
@@ -151,16 +191,16 @@ export function SensorNode({ sensorId, position, onClick }) {
 
       {/* Point light for local illumination */}
       <pointLight
-        color={statusColor}
-        intensity={sensor?.status === 'critical' ? 3 : 1}
-        distance={5}
+        color={status === 'critical' ? '#FF0000' : '#FF6B35'}
+        intensity={status === 'critical' ? 4 : 1.5}
+        distance={6}
         decay={2}
       />
 
       {/* HTML Tooltip */}
       {isSelected && (
         <Html
-          position={[0, 0.6, 0]}
+          position={[0, 0.8, 0]}
           center
           distanceFactor={15}
           style={{ pointerEvents: 'none' }}
@@ -170,9 +210,16 @@ export function SensorNode({ sensorId, position, onClick }) {
               <span className="tooltip-label">{sensor.label}</span>
               <span
                 className="tooltip-status"
-                style={{ color: statusColor.getStyle() }}
+                style={{
+                  color:
+                    status === 'critical'
+                      ? '#FF0000'
+                      : status === 'warning'
+                        ? '#FFBA08'
+                        : '#FF8C00',
+                }}
               >
-                {sensor.status.toUpperCase()}
+                {status.toUpperCase()}
               </span>
             </div>
             <div className="tooltip-value">

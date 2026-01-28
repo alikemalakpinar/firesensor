@@ -29,32 +29,33 @@ export function HeroMetric({
 
   if (!sensor) return null;
 
+  // Magma & Obsidian color scheme
   const statusConfig = {
     normal: {
-      color: 'text-electric-cyan',
-      bgColor: 'bg-electric-cyan/10',
-      borderColor: 'border-electric-cyan/30',
+      color: 'text-deep-amber',
+      bgColor: 'bg-burnt-orange/10',
+      borderColor: 'border-burnt-orange/30',
       icon: CheckCircle,
       label: 'NOMINAL',
     },
     warning: {
-      color: 'text-amber',
-      bgColor: 'bg-amber/10',
-      borderColor: 'border-amber/30',
+      color: 'text-warning-yellow',
+      bgColor: 'bg-warning-yellow/10',
+      borderColor: 'border-warning-yellow/30',
       icon: AlertTriangle,
       label: 'WARNING',
     },
     critical: {
-      color: 'text-neon-red',
-      bgColor: 'bg-neon-red/10',
-      borderColor: 'border-neon-red/30',
+      color: 'text-strobe-red',
+      bgColor: 'bg-strobe-red/10',
+      borderColor: 'border-strobe-red/30',
       icon: AlertTriangle,
       label: 'CRITICAL',
     },
     offline: {
-      color: 'text-gray-500',
-      bgColor: 'bg-gray-500/10',
-      borderColor: 'border-gray-500/30',
+      color: 'text-warm-grey',
+      bgColor: 'bg-warm-grey/10',
+      borderColor: 'border-warm-grey/30',
       icon: Minus,
       label: 'OFFLINE',
     },
@@ -125,9 +126,9 @@ export function HeroMetric({
             <div
               className={`flex items-center gap-1 text-sm ${
                 sensor.trend === 'rising'
-                  ? 'text-amber'
+                  ? 'text-burnt-orange'
                   : sensor.trend === 'falling'
-                    ? 'text-electric-cyan'
+                    ? 'text-dim-grey'
                     : 'text-white/40'
               }`}
             >
@@ -197,12 +198,13 @@ function Sparkline({ data, status }) {
       .join(' ');
   }, [data]);
 
+  // Ember theme sparkline colors
   const strokeColor =
     status === 'critical'
-      ? '#FF2A6D'
+      ? '#FF0000'  // Strobe red
       : status === 'warning'
-        ? '#FFB30F'
-        : '#00F0FF';
+        ? '#FFBA08'  // Warning yellow
+        : '#FF8C00'; // Deep amber
 
   return (
     <div className="relative h-10 w-full overflow-hidden rounded">
