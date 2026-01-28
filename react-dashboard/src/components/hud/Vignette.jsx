@@ -205,30 +205,30 @@ export function AlertBanner() {
           <motion.div
             className={`
               mt-4 px-6 py-3
-              bg-neon-red/20 backdrop-blur-xl
-              border border-neon-red/50
+              bg-strobe-red/20 backdrop-blur-xl
+              border border-strobe-red/50
               rounded-full
               flex items-center gap-3
-              shadow-lg shadow-neon-red/30
+              shadow-lg shadow-strobe-red/30
               pointer-events-auto
             `}
             animate={{
               boxShadow: [
-                '0 10px 40px -10px rgba(255, 42, 109, 0.3)',
-                '0 10px 50px -10px rgba(255, 42, 109, 0.5)',
-                '0 10px 40px -10px rgba(255, 42, 109, 0.3)',
+                '0 10px 40px -10px rgba(255, 0, 0, 0.3)',
+                '0 10px 50px -10px rgba(255, 0, 0, 0.5)',
+                '0 10px 40px -10px rgba(255, 0, 0, 0.3)',
               ],
             }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           >
             {/* Pulsing dot */}
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-red opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-neon-red"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-strobe-red opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-strobe-red"></span>
             </span>
 
             {/* Alert text */}
-            <span className="text-neon-red font-rajdhani font-semibold uppercase tracking-wider">
+            <span className="text-strobe-red font-rajdhani font-semibold uppercase tracking-wider">
               {criticalSensors.length} Critical Alert
               {criticalSensors.length > 1 ? 's' : ''}
             </span>

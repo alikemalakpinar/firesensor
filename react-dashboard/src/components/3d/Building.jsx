@@ -2,45 +2,43 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// Building configuration
+// Building configuration - Matte Black Metal aesthetic
 const BUILDING_CONFIG = {
   width: 12,
   height: 8,
   depth: 10,
   floors: 3,
-  wireframeColor: 0x0f3d3e,
-  glassColor: 0x00f0ff,
-  edgeColor: 0x00f0ff,
+  // Obsidian/Metal colors
+  metalColor: 0x1a1a1a,
+  edgeColor: 0xff4500, // Burnt orange for edges
+  panelColor: 0x0a0a0a,
+  glowColor: 0xff6b35, // Ember glow
 };
 
 /**
- * Building - A futuristic wireframe building for the Digital Twin
+ * Building - Matte Black Metal Industrial Structure
  *
- * Features:
- * - Procedural wireframe structure
- * - Glass-like semi-transparent panels
- * - Floor separators
- * - Edge glow effect
- * - Subtle rotation animation
+ * "Magma & Obsidian" aesthetic:
+ * - Solid dark metal appearance (not wireframe)
+ * - Subtle ember glow on edges
+ * - Industrial, authoritative feel
  */
 export function Building() {
   const groupRef = useRef();
-  const wireframeRef = useRef();
 
   // Subtle rotation animation
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.1) * 0.05;
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.08) * 0.03;
     }
   });
 
-  // Floor height calculation
   const floorHeight = BUILDING_CONFIG.height / BUILDING_CONFIG.floors;
 
   return (
     <group ref={groupRef} position={[0, BUILDING_CONFIG.height / 2, 0]}>
-      {/* Main wireframe structure */}
-      <WireframeBox
+      {/* Main building structure */}
+      <MetalStructure
         width={BUILDING_CONFIG.width}
         height={BUILDING_CONFIG.height}
         depth={BUILDING_CONFIG.depth}
@@ -56,155 +54,86 @@ export function Building() {
         />
       ))}
 
-      {/* Glass panels */}
-      <GlassPanels
+      {/* Edge glow lines */}
+      <EdgeGlow
         width={BUILDING_CONFIG.width}
         height={BUILDING_CONFIG.height}
         depth={BUILDING_CONFIG.depth}
       />
 
-      {/* Ground reference grid */}
-      <GridFloor />
+      {/* Ground reference */}
+      <IndustrialFloor />
     </group>
   );
 }
 
 /**
- * WireframeBox - Creates a wireframe box structure
+ * MetalStructure - Solid matte black metal building
  */
-function WireframeBox({ width, height, depth }) {
-  const edgesRef = useRef();
+function MetalStructure({ width, height, depth }) {
+  const meshRef = useRef();
 
-  // Create box edges geometry
-  const edgesGeometry = useMemo(() => {
-    const boxGeometry = new THREE.BoxGeometry(width, height, depth);
-    return new THREE.EdgesGeometry(boxGeometry);
-  }, [width, height, depth]);
-
-  useFrame((state) => {
-    if (edgesRef.current) {
-      // Subtle glow pulsing
-      edgesRef.current.material.opacity = 0.4 + Math.sin(state.clock.elapsedTime) * 0.1;
-    }
-  });
+  // Matte metal material
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: BUILDING_CONFIG.metalColor,
+        metalness: 0.8,
+        roughness: 0.6,
+        envMapIntensity: 0.3,
+      }),
+    []
+  );
 
   return (
-    <>
-      {/* Primary edges */}
-      <lineSegments ref={edgesRef} geometry={edgesGeometry}>
-        <lineBasicMaterial
-          color={BUILDING_CONFIG.edgeColor}
+    <group>
+      {/* Main building body - slightly smaller to show edges */}
+      <mesh ref={meshRef} material={material} castShadow receiveShadow>
+        <boxGeometry args={[width * 0.98, height * 0.98, depth * 0.98]} />
+      </mesh>
+
+      {/* Outer frame - darker */}
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={BUILDING_CONFIG.panelColor}
+          metalness={0.9}
+          roughness={0.4}
           transparent
-          opacity={0.5}
+          opacity={0.3}
         />
-      </lineSegments>
+      </mesh>
 
-      {/* Inner structure lines */}
-      <InnerStructure width={width} height={height} depth={depth} />
-    </>
+      {/* Vertical structural beams */}
+      <StructuralBeams width={width} height={height} depth={depth} />
+    </group>
   );
 }
 
 /**
- * InnerStructure - Creates internal structural elements
+ * StructuralBeams - Industrial support beams
  */
-function InnerStructure({ width, height, depth }) {
-  const lines = useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
-    const points = [];
+function StructuralBeams({ width, height, depth }) {
+  const beamSize = 0.15;
+  const hw = width / 2 - beamSize;
+  const hd = depth / 2 - beamSize;
 
-    // Vertical columns at corners
-    const hw = width / 2;
-    const hh = height / 2;
-    const hd = depth / 2;
-
-    // Inner columns
-    const innerOffset = 0.3;
-    const corners = [
-      [-hw + innerOffset, -hw + innerOffset],
-      [hw - innerOffset, -hw + innerOffset],
-      [-hw + innerOffset, hw - innerOffset],
-      [hw - innerOffset, hw - innerOffset],
-    ];
-
-    corners.forEach(([x, z]) => {
-      points.push(new THREE.Vector3(x, -hh, z));
-      points.push(new THREE.Vector3(x, hh, z));
-    });
-
-    // Cross braces
-    const floorCount = 3;
-    const floorHeight = height / floorCount;
-    for (let i = 0; i < floorCount; i++) {
-      const y = -hh + floorHeight * i + floorHeight / 2;
-      points.push(new THREE.Vector3(-hw, y, -hd));
-      points.push(new THREE.Vector3(hw, y, hd));
-      points.push(new THREE.Vector3(hw, y, -hd));
-      points.push(new THREE.Vector3(-hw, y, hd));
-    }
-
-    geometry.setFromPoints(points);
-    return geometry;
-  }, [width, height, depth]);
-
-  return (
-    <lineSegments geometry={lines}>
-      <lineBasicMaterial
-        color={BUILDING_CONFIG.wireframeColor}
-        transparent
-        opacity={0.3}
-      />
-    </lineSegments>
-  );
-}
-
-/**
- * FloorPlane - Semi-transparent floor separator
- */
-function FloorPlane({ y, width, depth }) {
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[width * 0.95, depth * 0.95]} />
-      <meshBasicMaterial
-        color={BUILDING_CONFIG.wireframeColor}
-        transparent
-        opacity={0.1}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-/**
- * GlassPanels - Creates glass-like wall panels
- */
-function GlassPanels({ width, height, depth }) {
-  const hw = width / 2;
-  const hd = depth / 2;
-
-  const panels = [
-    { position: [0, 0, hd], rotation: [0, 0, 0], size: [width, height] },
-    { position: [0, 0, -hd], rotation: [0, Math.PI, 0], size: [width, height] },
-    { position: [hw, 0, 0], rotation: [0, Math.PI / 2, 0], size: [depth, height] },
-    { position: [-hw, 0, 0], rotation: [0, -Math.PI / 2, 0], size: [depth, height] },
+  const positions = [
+    [-hw, 0, -hd],
+    [hw, 0, -hd],
+    [-hw, 0, hd],
+    [hw, 0, hd],
   ];
 
   return (
     <group>
-      {panels.map((panel, i) => (
-        <mesh
-          key={i}
-          position={panel.position}
-          rotation={panel.rotation}
-        >
-          <planeGeometry args={panel.size} />
+      {positions.map((pos, i) => (
+        <mesh key={i} position={pos} castShadow>
+          <boxGeometry args={[beamSize * 2, height, beamSize * 2]} />
           <meshStandardMaterial
-            color={BUILDING_CONFIG.glassColor}
-            transparent
-            opacity={0.03}
-            side={THREE.DoubleSide}
+            color={0x2d2d2d}
             metalness={0.9}
-            roughness={0.1}
+            roughness={0.3}
           />
         </mesh>
       ))}
@@ -213,39 +142,87 @@ function GlassPanels({ width, height, depth }) {
 }
 
 /**
- * GridFloor - Reference grid on the ground
+ * EdgeGlow - Glowing edges like heated metal
  */
-function GridFloor() {
+function EdgeGlow({ width, height, depth }) {
+  const edgesRef = useRef();
+
+  // Animate edge glow
+  useFrame((state) => {
+    if (edgesRef.current) {
+      const pulse = 0.5 + Math.sin(state.clock.elapsedTime * 2) * 0.3;
+      edgesRef.current.material.opacity = pulse;
+    }
+  });
+
+  const edgesGeometry = useMemo(() => {
+    const boxGeometry = new THREE.BoxGeometry(width, height, depth);
+    return new THREE.EdgesGeometry(boxGeometry);
+  }, [width, height, depth]);
+
+  return (
+    <lineSegments ref={edgesRef} geometry={edgesGeometry}>
+      <lineBasicMaterial
+        color={BUILDING_CONFIG.edgeColor}
+        transparent
+        opacity={0.6}
+        linewidth={2}
+      />
+    </lineSegments>
+  );
+}
+
+/**
+ * FloorPlane - Semi-transparent floor separator with ember tint
+ */
+function FloorPlane({ y, width, depth }) {
+  return (
+    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[width * 0.9, depth * 0.9]} />
+      <meshBasicMaterial
+        color={BUILDING_CONFIG.edgeColor}
+        transparent
+        opacity={0.05}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+/**
+ * IndustrialFloor - Ground reference with grid pattern
+ */
+function IndustrialFloor() {
   const gridRef = useRef();
 
   useFrame((state) => {
     if (gridRef.current) {
       gridRef.current.material.opacity =
-        0.15 + Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+        0.2 + Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
     }
   });
 
   return (
     <group position={[0, -BUILDING_CONFIG.height / 2 - 0.01, 0]}>
-      {/* Main grid */}
+      {/* Grid helper with ember color */}
       <gridHelper
         ref={gridRef}
-        args={[30, 30, BUILDING_CONFIG.edgeColor, BUILDING_CONFIG.wireframeColor]}
+        args={[40, 40, BUILDING_CONFIG.edgeColor, 0x2d2d2d]}
       />
 
-      {/* Ground plane for receiving shadows */}
+      {/* Ground plane for shadows */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[50, 50]} />
-        <shadowMaterial transparent opacity={0.3} />
+        <planeGeometry args={[60, 60]} />
+        <shadowMaterial transparent opacity={0.4} />
       </mesh>
 
-      {/* Radial gradient floor effect */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <circleGeometry args={[20, 64]} />
+      {/* Radial glow on floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <circleGeometry args={[15, 64]} />
         <meshBasicMaterial
-          color={BUILDING_CONFIG.edgeColor}
+          color={BUILDING_CONFIG.glowColor}
           transparent
-          opacity={0.05}
+          opacity={0.03}
         />
       </mesh>
     </group>
@@ -253,30 +230,41 @@ function GridFloor() {
 }
 
 /**
- * ParticleField - Floating particles for atmosphere
+ * EmberParticles - Floating ember particles for atmosphere
  */
-export function ParticleField({ count = 200 }) {
+export function EmberParticles({ count = 100 }) {
   const pointsRef = useRef();
 
   const particles = useMemo(() => {
     const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 40;
-      positions[i * 3 + 1] = Math.random() * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+      // Position
+      positions[i * 3] = (Math.random() - 0.5) * 30;
+      positions[i * 3 + 1] = Math.random() * 15;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+
+      // Color - orange to red gradient
+      const t = Math.random();
+      colors[i * 3] = 1; // R
+      colors[i * 3 + 1] = 0.3 + t * 0.4; // G
+      colors[i * 3 + 2] = t * 0.2; // B
     }
-    return positions;
+
+    return { positions, colors };
   }, [count]);
 
   useFrame((state) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.02;
+      // Slow rotation
+      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.01;
 
-      // Animate particles floating up
+      // Float particles upward
       const positions = pointsRef.current.geometry.attributes.position.array;
       for (let i = 0; i < count; i++) {
-        positions[i * 3 + 1] += 0.002;
-        if (positions[i * 3 + 1] > 20) {
+        positions[i * 3 + 1] += 0.003;
+        if (positions[i * 3 + 1] > 15) {
           positions[i * 3 + 1] = 0;
         }
       }
@@ -290,16 +278,23 @@ export function ParticleField({ count = 200 }) {
         <bufferAttribute
           attach="attributes-position"
           count={count}
-          array={particles}
+          array={particles.positions}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-color"
+          count={count}
+          array={particles.colors}
           itemSize={3}
         />
       </bufferGeometry>
       <pointsMaterial
-        color={BUILDING_CONFIG.edgeColor}
-        size={0.05}
+        size={0.08}
         transparent
-        opacity={0.6}
+        opacity={0.7}
+        vertexColors
         sizeAttenuation
+        blending={THREE.AdditiveBlending}
       />
     </points>
   );

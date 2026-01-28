@@ -51,29 +51,30 @@ export function SensorChip({ sensorId, onClick }) {
 
   const Icon = SENSOR_ICONS[sensorId] || Activity;
 
+  // Magma & Obsidian color scheme
   const statusColors = {
     normal: {
-      bg: 'bg-electric-cyan/10',
-      border: 'border-electric-cyan/30',
-      text: 'text-electric-cyan',
-      glow: 'shadow-electric-cyan/20',
+      bg: 'bg-burnt-orange/10',
+      border: 'border-burnt-orange/30',
+      text: 'text-deep-amber',
+      glow: 'shadow-burnt-orange/20',
     },
     warning: {
-      bg: 'bg-amber/10',
-      border: 'border-amber/30',
-      text: 'text-amber',
-      glow: 'shadow-amber/20',
+      bg: 'bg-warning-yellow/10',
+      border: 'border-warning-yellow/30',
+      text: 'text-warning-yellow',
+      glow: 'shadow-warning-yellow/20',
     },
     critical: {
-      bg: 'bg-neon-red/10',
-      border: 'border-neon-red/30',
-      text: 'text-neon-red',
-      glow: 'shadow-neon-red/30',
+      bg: 'bg-strobe-red/10',
+      border: 'border-strobe-red/30',
+      text: 'text-strobe-red',
+      glow: 'shadow-strobe-red/30',
     },
     offline: {
-      bg: 'bg-gray-500/10',
-      border: 'border-gray-500/30',
-      text: 'text-gray-500',
+      bg: 'bg-warm-grey/10',
+      border: 'border-warm-grey/30',
+      text: 'text-warm-grey',
       glow: '',
     },
   };
@@ -148,8 +149,8 @@ export function SensorChip({ sensorId, onClick }) {
             </span>
             {sensor.status === 'critical' && (
               <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-neon-red opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-red"></span>
+                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-strobe-red opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-strobe-red"></span>
               </span>
             )}
           </div>
@@ -162,9 +163,9 @@ export function SensorChip({ sensorId, onClick }) {
               size={12}
               className={
                 sensor.trend === 'rising'
-                  ? 'text-amber'
+                  ? 'text-burnt-orange'
                   : sensor.trend === 'falling'
-                    ? 'text-electric-cyan'
+                    ? 'text-dim-grey'
                     : 'text-white/30'
               }
             />
@@ -248,12 +249,13 @@ function MiniSparkline({ data, status }) {
     })
     .join(' ');
 
+  // Ember theme sparkline colors
   const strokeColor =
     status === 'critical'
-      ? '#FF2A6D'
+      ? '#FF0000'  // Strobe red
       : status === 'warning'
-        ? '#FFB30F'
-        : '#00F0FF';
+        ? '#FFBA08'  // Warning yellow
+        : '#FF8C00'; // Deep amber
 
   return (
     <svg
@@ -322,7 +324,7 @@ function StatItem({ label, value, unit, highlight = false }) {
       </div>
       <div
         className={`font-mono text-sm ${
-          highlight ? 'text-electric-cyan' : 'text-white/70'
+          highlight ? 'text-deep-amber' : 'text-white/70'
         }`}
       >
         {value}

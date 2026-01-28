@@ -2,32 +2,31 @@ import { motion } from 'framer-motion';
 import { forwardRef } from 'react';
 
 /**
- * GlassPanel - A reusable glassmorphism panel component
+ * GlassPanel - Smoked Glass with Ember Tint
  *
- * Implements the "Glassmorphism 3.0" design with:
- * - High background blur
- * - Thin 1px semi-transparent borders
- * - Subtle noise texture overlay
- * - Corner accent decorations
- * - Glow effects on hover/active states
+ * "Magma & Obsidian" aesthetic:
+ * - Dark smoked glass background
+ * - Amber/orange tinted borders
+ * - Inner glow effects mimicking heated metal
+ * - No standard shadows - only glows
  */
 const GlassPanel = forwardRef(
   (
     {
       children,
       className = '',
-      variant = 'default', // 'default' | 'accent' | 'critical' | 'warning' | 'minimal'
+      variant = 'default', // 'default' | 'ember' | 'critical' | 'warning' | 'minimal'
       size = 'md', // 'sm' | 'md' | 'lg'
       glow = false,
       animated = true,
-      corners = false, // Show corner accent decorations
+      corners = false,
       hover = true,
       onClick,
       ...props
     },
     ref
   ) => {
-    // Base styles for the glass effect
+    // Base styles - Smoked glass effect
     const baseStyles = `
       relative
       backdrop-blur-xl
@@ -37,41 +36,41 @@ const GlassPanel = forwardRef(
       overflow-hidden
     `;
 
-    // Variant-specific styles
+    // Variant-specific styles - Ember/Magma theme
     const variantStyles = {
       default: `
-        bg-void-black/40
-        border-white/10
-        shadow-lg
-        shadow-deep-teal/5
+        bg-black/60
+        border-burnt-orange/20
+        shadow-[0_0_15px_rgba(255,140,0,0.08)]
+        shadow-[inset_0_1px_0_rgba(255,140,0,0.1)]
       `,
-      accent: `
-        bg-deep-teal/20
-        border-electric-cyan/30
-        shadow-lg
-        shadow-electric-cyan/10
+      ember: `
+        bg-black/70
+        border-burnt-orange/30
+        shadow-[0_0_20px_rgba(255,69,0,0.15)]
+        shadow-[inset_0_0_30px_rgba(255,69,0,0.05)]
       `,
       critical: `
-        bg-neon-red/10
-        border-neon-red/40
-        shadow-lg
-        shadow-neon-red/20
+        bg-black/80
+        border-strobe-red/50
+        shadow-[0_0_30px_rgba(255,0,0,0.25)]
+        shadow-[inset_0_0_40px_rgba(255,0,0,0.1)]
       `,
       warning: `
-        bg-amber/10
-        border-amber/40
-        shadow-lg
-        shadow-amber/20
+        bg-black/70
+        border-warning-yellow/40
+        shadow-[0_0_20px_rgba(255,186,8,0.15)]
+        shadow-[inset_0_0_20px_rgba(255,186,8,0.05)]
       `,
       minimal: `
-        bg-transparent
-        border-white/5
+        bg-black/40
+        border-tungsten/30
       `,
     };
 
     // Size-specific padding
     const sizeStyles = {
-      sm: 'p-2 rounded-lg',
+      sm: 'p-3 rounded-lg',
       md: 'p-4 rounded-xl',
       lg: 'p-6 rounded-2xl',
     };
@@ -79,22 +78,21 @@ const GlassPanel = forwardRef(
     // Hover effect styles
     const hoverStyles = hover
       ? `
-        hover:bg-white/5
-        hover:border-white/20
-        hover:shadow-xl
+        hover:border-burnt-orange/40
+        hover:shadow-[0_0_25px_rgba(255,69,0,0.2)]
       `
       : '';
 
-    // Glow effect
+    // Glow effect for active/selected states
     const glowStyles = glow
       ? `
         before:absolute
         before:inset-0
         before:rounded-inherit
         before:bg-gradient-to-r
-        before:from-electric-cyan/0
-        before:via-electric-cyan/5
-        before:to-electric-cyan/0
+        before:from-burnt-orange/0
+        before:via-burnt-orange/10
+        before:to-burnt-orange/0
         before:animate-pulse
       `
       : '';
@@ -153,9 +151,9 @@ const GlassPanel = forwardRef(
       <>
         {/* Noise texture overlay */}
         <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
+          className="absolute inset-0 opacity-[0.015] pointer-events-none mix-blend-overlay"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
 
@@ -172,8 +170,11 @@ const GlassPanel = forwardRef(
         {/* Content */}
         <div className="relative z-10">{children}</div>
 
-        {/* Gradient overlay at top */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        {/* Top edge highlight - heated metal effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-burnt-orange/30 to-transparent" />
+
+        {/* Bottom subtle glow */}
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-deep-amber/10 to-transparent" />
       </>
     );
 
@@ -201,15 +202,15 @@ const GlassPanel = forwardRef(
 GlassPanel.displayName = 'GlassPanel';
 
 /**
- * Corner decoration component
+ * Corner decoration component - Ember style
  */
 function Corner({ position, variant }) {
   const colorClass = {
-    default: 'border-white/30',
-    accent: 'border-electric-cyan/50',
-    critical: 'border-neon-red/50',
-    warning: 'border-amber/50',
-    minimal: 'border-white/10',
+    default: 'border-burnt-orange/40',
+    ember: 'border-deep-amber/50',
+    critical: 'border-strobe-red/60',
+    warning: 'border-warning-yellow/50',
+    minimal: 'border-tungsten/30',
   }[variant];
 
   const positionClasses = {
@@ -234,7 +235,7 @@ function Corner({ position, variant }) {
 }
 
 /**
- * GlassCard - A specialized glass panel with header and content sections
+ * GlassCard - Specialized panel with header - Ember theme
  */
 export function GlassCard({
   title,
@@ -253,18 +254,18 @@ export function GlassCard({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className="p-2 rounded-lg bg-electric-cyan/10 text-electric-cyan">
+              <div className="p-2 rounded-lg bg-burnt-orange/10 text-burnt-orange">
                 <Icon size={18} />
               </div>
             )}
             <div>
               {title && (
-                <h3 className="font-rajdhani font-semibold text-white text-lg">
+                <h3 className="font-rajdhani font-semibold text-off-white text-lg">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-xs text-white/50 font-inter">{subtitle}</p>
+                <p className="text-xs text-dim-grey font-inter">{subtitle}</p>
               )}
             </div>
           </div>
@@ -279,7 +280,7 @@ export function GlassCard({
 }
 
 /**
- * GlassDivider - A subtle divider for use within glass panels
+ * GlassDivider - Subtle divider with ember glow
  */
 export function GlassDivider({ className = '' }) {
   return (
@@ -288,7 +289,7 @@ export function GlassDivider({ className = '' }) {
         h-px
         bg-gradient-to-r
         from-transparent
-        via-white/10
+        via-burnt-orange/20
         to-transparent
         my-4
         ${className}
