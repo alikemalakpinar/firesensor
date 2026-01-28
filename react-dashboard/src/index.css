@@ -1,0 +1,311 @@
+/* Google Fonts - must come before Tailwind */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+/* Tailwind v4 Custom Theme */
+@theme {
+  /* Color Palette - Sci-Fi Dark Mode */
+  --color-void-black: #050505;
+  --color-gunmetal: #121212;
+  --color-deep-carbon: #0b0c10;
+
+  /* Primary Accent */
+  --color-electric-cyan: #00F0FF;
+  --color-deep-teal: #0F3D3E;
+  --color-accent-cyan: #66fcf1;
+
+  /* Alert Colors */
+  --color-neon-red: #FF2A6D;
+  --color-amber: #FFB30F;
+
+  /* Typography */
+  --font-rajdhani: 'Rajdhani', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-void-black);
+  color: white;
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font Classes */
+.font-rajdhani {
+  font-family: var(--font-rajdhani);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-deep-teal);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-electric-cyan);
+}
+
+/* Selection */
+::selection {
+  background: var(--color-electric-cyan);
+  color: var(--color-void-black);
+}
+
+/* Glass Tooltip for 3D Scene */
+.glass-tooltip {
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 140px;
+  font-family: var(--font-inter);
+  pointer-events: none;
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(0, 240, 255, 0.1);
+}
+
+.glass-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.glass-tooltip .tooltip-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.glass-tooltip .tooltip-status {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.glass-tooltip .tooltip-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.glass-tooltip .tooltip-value .value {
+  font-family: var(--font-rajdhani);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-electric-cyan);
+  line-height: 1;
+}
+
+.glass-tooltip .tooltip-value .unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Gradient Text Utility */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--color-electric-cyan), var(--color-deep-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.glow-cyan {
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.3),
+    0 0 40px rgba(0, 240, 255, 0.1);
+}
+
+.glow-red {
+  box-shadow:
+    0 0 20px rgba(255, 42, 109, 0.3),
+    0 0 40px rgba(255, 42, 109, 0.1);
+}
+
+.glow-amber {
+  box-shadow:
+    0 0 20px rgba(255, 179, 15, 0.3),
+    0 0 40px rgba(255, 179, 15, 0.1);
+}
+
+/* Scanline Animation */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px currentColor;
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 40px currentColor;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Grid Background Pattern */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Noise Texture */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Corner Bracket Decoration */
+.corner-brackets::before,
+.corner-brackets::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--color-electric-cyan);
+  border-style: solid;
+  opacity: 0.5;
+}
+
+.corner-brackets::before {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.corner-brackets::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+/* HUD Border Style */
+.hud-border {
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  position: relative;
+}
+
+.hud-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 240, 255, 0.3),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: border-flow 3s linear infinite;
+  pointer-events: none;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+}
+
+@keyframes border-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Focus Styles */
+button:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--color-electric-cyan);
+  outline-offset: 2px;
+}
+
+/* Transition Utilities */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Z-index layers */
+.z-base { z-index: 0; }
+.z-3d { z-index: 10; }
+.z-hud { z-index: 20; }
+.z-sidebar { z-index: 30; }
+.z-modal { z-index: 40; }
+.z-overlay { z-index: 50; }
+.z-tooltip { z-index: 60; }
+
+/* Backdrop blur fallback for older browsers */
+@supports not (backdrop-filter: blur(20px)) {
+  .backdrop-blur-xl {
+    background-color: rgba(5, 5, 5, 0.95);
+  }
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
