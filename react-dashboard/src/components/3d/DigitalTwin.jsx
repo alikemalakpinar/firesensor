@@ -38,7 +38,7 @@ function CameraController() {
   const controlsRef = useRef();
   const { camera } = useThree();
   const cameraTarget = useSensorStore((state) => state.cameraTarget);
-  const sensors = useSensorStore((state) => state.sensors);
+  const sensors = useSensorStore((state) => state.deviceSensors[state.activeDeviceId] || {});
 
   useEffect(() => {
     if (cameraTarget && sensors[cameraTarget]) {
