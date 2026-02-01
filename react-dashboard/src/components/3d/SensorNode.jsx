@@ -32,7 +32,7 @@ export function SensorNode({ sensorId, position, onClick }) {
   const coreRef = useRef();
   const glowRef = useRef();
 
-  const sensor = useSensorStore((state) => state.sensors[sensorId]);
+  const sensor = useSensorStore((state) => state.deviceSensors[state.activeDeviceId]?.[sensorId]);
   const selectedSensor = useSensorStore((state) => state.selectedSensor);
   const selectSensor = useSensorStore((state) => state.selectSensor);
 
@@ -138,7 +138,7 @@ export function SensorNode({ sensorId, position, onClick }) {
 }
 
 export function SensorNodes({ onSensorClick }) {
-  const sensors = useSensorStore((state) => state.sensors);
+  const sensors = useSensorStore((state) => state.deviceSensors[state.activeDeviceId] || {});
   return (
     <group>
       {Object.values(sensors).map((sensor) => (

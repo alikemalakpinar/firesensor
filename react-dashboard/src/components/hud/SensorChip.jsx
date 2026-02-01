@@ -24,7 +24,7 @@ const SENSOR_ICONS = {
 
 export function SensorChip({ sensorId, onClick }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const sensor = useSensorStore((state) => state.sensors[sensorId]);
+  const sensor = useSensorStore((state) => state.deviceSensors[state.activeDeviceId]?.[sensorId]);
   const selectSensor = useSensorStore((state) => state.selectSensor);
   const setCameraTarget = useSensorStore((state) => state.setCameraTarget);
 
@@ -219,7 +219,7 @@ function StatItem({ label, value, unit, highlight = false }) {
 }
 
 export function SensorChipGrid({ className = '' }) {
-  const sensors = useSensorStore((state) => state.sensors);
+  const sensors = useSensorStore((state) => state.deviceSensors[state.activeDeviceId] || {});
   return (
     <div className={`grid grid-cols-1 gap-2 ${className}`}>
       {Object.keys(sensors).map((id) => (

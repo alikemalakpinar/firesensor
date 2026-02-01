@@ -2,7 +2,6 @@ import { useEffect, useCallback, useRef } from 'react';
 import Paho from 'paho-mqtt';
 import { useSensorStore } from '../stores/useSensorStore';
 
-// MQTT Configuration
 const MQTT_CONFIG = {
   host: '213.142.151.191',
   port: 9001,
@@ -12,83 +11,37 @@ const MQTT_CONFIG = {
   maxReconnectAttempts: 10,
 };
 
-// Warning1 bit definitions (8 sensors for gas/air)
-const WARNING1_SENSORS = [
-  'temperature',
-  'humidity',
-  'gas',
-  'air-quality',
-  'no2',
-  'co',
-  'tvoc',
-  'eco2',
-];
+const WARNING1_SENSORS = ['temperature', 'humidity', 'gas', 'air-quality', 'no2', 'co', 'tvoc', 'eco2'];
+const WARNING2_SENSORS = ['surface-temp', 'surface-temp-2', 'pressure', 'current'];
 
-// Warning2 bit definitions (4 sensors for physical)
-const WARNING2_SENSORS = [
-  'surface-temp',
-  'surface-temp-2',
-  'pressure',
-  'current',
-];
-
-/**
- * Convert hex string to byte value
- */
 function hexToByte(hexString) {
   if (!hexString || hexString.length < 2) return 0;
   return parseInt(hexString, 16) || 0;
 }
 
-/**
- * Parse Warning1 byte to get anomaly sensor IDs
- * Warning1 contains 8 bits for: temp, humidity, gas, air-quality, no2, co, tvoc, eco2
- */
 function parseWarning1(warningHex) {
   const warningByte = hexToByte(warningHex);
   const anomalies = [];
-
   for (let i = 0; i < 8; i++) {
-    if ((warningByte >> i) & 1) {
-      anomalies.push(WARNING1_SENSORS[i]);
-    }
+    if ((warningByte >> i) & 1) anomalies.push(WARNING1_SENSORS[i]);
   }
-
   return anomalies;
 }
 
-/**
- * Parse Warning2 byte to get anomaly sensor IDs
- * Warning2 contains 4 bits for: surface-temp, surface-temp-2, pressure, current
- */
 function parseWarning2(warningHex) {
   const warningByte = hexToByte(warningHex);
   const anomalies = [];
-
   for (let i = 0; i < 4; i++) {
-    if ((warningByte >> i) & 1) {
-      anomalies.push(WARNING2_SENSORS[i]);
-    }
+    if ((warningByte >> i) & 1) anomalies.push(WARNING2_SENSORS[i]);
   }
-
   return anomalies;
 }
 
-/**
- * Parse the MQTT message payload
- * Format: A;temp;humidity;gas;air-quality;no2;co;tvoc;eco2;surface-temp1;surface-temp2;pressure;current;warning2;warning1;panelHealth;B
- */
 function parseFireSensorData(message) {
   try {
     const parts = message.split(';');
+    if (parts.length < 17 || parts[0] !== 'A' || parts[parts.length - 1] !== 'B') return null;
 
-    // Validate message format
-    if (parts.length < 17 || parts[0] !== 'A' || parts[parts.length - 1] !== 'B') {
-      console.warn('[MQTT] Invalid message format:', message);
-      return null;
-    }
-
-    // Parse sensor values
     const sensorData = {
       temperature: parseFloat(parts[1]) || 0,
       humidity: parseFloat(parts[2]) || 0,
@@ -104,21 +57,15 @@ function parseFireSensorData(message) {
       current: parseFloat(parts[12]) || 0,
     };
 
-    // Parse warning flags
-    const warning2Hex = parts[13];
-    const warning1Hex = parts[14];
-    const panelHealth = parseFloat(parts[15]) || 100;
-
-    // Get anomaly sensor IDs from warning bytes
     const anomalySensorIds = [
-      ...parseWarning1(warning1Hex),
-      ...parseWarning2(warning2Hex),
+      ...parseWarning1(parts[14]),
+      ...parseWarning2(parts[13]),
     ];
 
     return {
       sensorData,
       anomalySensorIds,
-      panelHealth,
+      panelHealth: parseFloat(parts[15]) || 100,
       timestamp: Date.now(),
     };
   } catch (error) {
@@ -127,51 +74,29 @@ function parseFireSensorData(message) {
   }
 }
 
-/**
- * Custom hook for MQTT connection and data handling
- */
 export function useMQTT() {
   const clientRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef(null);
 
-  const {
-    setConnectionStatus,
-    updateBulkSensors,
-    setPanelHealth,
-    setSystemStatus,
-  } = useSensorStore();
+  const { setConnectionStatus, updateBulkSensors, setPanelHealth, setSystemStatus } = useSensorStore();
 
   const connect = useCallback(() => {
-    // Cleanup existing client
     if (clientRef.current) {
-      try {
-        clientRef.current.disconnect();
-      } catch (e) {
-        // Ignore disconnect errors
-      }
+      try { clientRef.current.disconnect(); } catch (e) {}
     }
 
     setConnectionStatus('connecting');
-    console.log('[MQTT] Connecting to', MQTT_CONFIG.host);
+    const client = new Paho.Client(MQTT_CONFIG.host, MQTT_CONFIG.port, MQTT_CONFIG.clientId);
 
-    const client = new Paho.Client(
-      MQTT_CONFIG.host,
-      MQTT_CONFIG.port,
-      MQTT_CONFIG.clientId
-    );
-
-    client.onConnectionLost = (responseObject) => {
-      console.warn('[MQTT] Connection lost:', responseObject.errorMessage);
+    client.onConnectionLost = () => {
       setConnectionStatus('disconnected');
       setSystemStatus('offline');
       scheduleReconnect();
     };
 
     client.onMessageArrived = (message) => {
-      const payload = message.payloadString;
-      const parsed = parseFireSensorData(payload);
-
+      const parsed = parseFireSensorData(message.payloadString);
       if (parsed) {
         updateBulkSensors(parsed.sensorData, parsed.anomalySensorIds);
         setPanelHealth(parsed.panelHealth);
@@ -180,22 +105,11 @@ export function useMQTT() {
 
     client.connect({
       onSuccess: () => {
-        console.log('[MQTT] Connected successfully');
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
-
-        // Subscribe to topic
-        client.subscribe(MQTT_CONFIG.topic, {
-          onSuccess: () => {
-            console.log('[MQTT] Subscribed to', MQTT_CONFIG.topic);
-          },
-          onFailure: (err) => {
-            console.error('[MQTT] Subscribe failed:', err);
-          },
-        });
+        client.subscribe(MQTT_CONFIG.topic);
       },
-      onFailure: (err) => {
-        console.error('[MQTT] Connection failed:', err);
+      onFailure: () => {
         setConnectionStatus('error');
         scheduleReconnect();
       },
@@ -208,62 +122,48 @@ export function useMQTT() {
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectAttemptsRef.current >= MQTT_CONFIG.maxReconnectAttempts) {
-      console.error('[MQTT] Max reconnect attempts reached');
       setConnectionStatus('error');
       return;
     }
-
     reconnectAttemptsRef.current += 1;
     const delay = MQTT_CONFIG.reconnectDelay + (reconnectAttemptsRef.current * 1000);
-
-    console.log(`[MQTT] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      connect();
-    }, delay);
+    reconnectTimeoutRef.current = setTimeout(() => connect(), delay);
   }, [connect, setConnectionStatus]);
 
   const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
+    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
     if (clientRef.current) {
-      try {
-        clientRef.current.disconnect();
-      } catch (e) {
-        // Ignore errors
-      }
+      try { clientRef.current.disconnect(); } catch (e) {}
       clientRef.current = null;
     }
-
     setConnectionStatus('disconnected');
   }, [setConnectionStatus]);
 
   useEffect(() => {
     connect();
-
-    return () => {
-      disconnect();
-    };
+    return () => disconnect();
   }, [connect, disconnect]);
 
-  return {
-    connect,
-    disconnect,
-    isConnected: useSensorStore((s) => s.connectionStatus === 'connected'),
-  };
+  return { connect, disconnect, isConnected: useSensorStore((s) => s.connectionStatus === 'connected') };
 }
 
-// For demo/development - simulate MQTT data
+/**
+ * Multi-device simulator - generates data for ALL devices
+ */
 export function useMQTTSimulator() {
-  const { updateBulkSensors, setConnectionStatus, setPanelHealth } = useSensorStore();
+  const { updateBulkSensors, setConnectionStatus, setPanelHealth, devices } = useSensorStore();
   const intervalRef = useRef(null);
+  const devicesRef = useRef(devices);
+
+  // Keep ref updated
+  useEffect(() => {
+    devicesRef.current = devices;
+  }, [devices]);
 
   useEffect(() => {
     setConnectionStatus('connected');
 
-    const generateData = () => {
+    const generateDataForDevice = (deviceId) => {
       const sensorData = {
         temperature: 22 + Math.random() * 8 - 4,
         humidity: 45 + Math.random() * 20 - 10,
@@ -279,28 +179,27 @@ export function useMQTTSimulator() {
         current: 50 + Math.random() * 100,
       };
 
-      // Randomly trigger alerts (5% chance per update)
       const anomalySensorIds = [];
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.04) {
         const sensors = Object.keys(sensorData);
-        const randomSensor = sensors[Math.floor(Math.random() * sensors.length)];
-        anomalySensorIds.push(randomSensor);
+        anomalySensorIds.push(sensors[Math.floor(Math.random() * sensors.length)]);
       }
 
-      updateBulkSensors(sensorData, anomalySensorIds);
-      setPanelHealth(95 + Math.random() * 5);
+      updateBulkSensors(sensorData, anomalySensorIds, deviceId);
+      setPanelHealth(95 + Math.random() * 5, deviceId);
     };
 
-    // Initial data
-    generateData();
+    const generateAllData = () => {
+      devicesRef.current.forEach((device) => {
+        generateDataForDevice(device.id);
+      });
+    };
 
-    // Update every 2 seconds
-    intervalRef.current = setInterval(generateData, 2000);
+    generateAllData();
+    intervalRef.current = setInterval(generateAllData, 2000);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
       setConnectionStatus('disconnected');
     };
   }, [updateBulkSensors, setConnectionStatus, setPanelHealth]);

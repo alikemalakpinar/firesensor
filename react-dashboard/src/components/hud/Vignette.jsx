@@ -35,7 +35,7 @@ export function Vignette() {
  */
 export function AlertBanner() {
   const systemStatus = useSensorStore((state) => state.systemStatus);
-  const sensors = useSensorStore((state) => state.sensors);
+  const sensors = useSensorStore((state) => state.deviceSensors[state.activeDeviceId] || {});
 
   const criticalSensors = useMemo(
     () => Object.values(sensors).filter((s) => s.status === 'critical'),

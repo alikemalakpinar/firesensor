@@ -5,7 +5,7 @@ import { useSensorStore } from '../../stores/useSensorStore';
  * CleanGauge - Minimal vertical bar gauge
  */
 export function TachometerGauge({ sensorId, title, size = 160, className = '' }) {
-  const sensor = useSensorStore((state) => state.sensors[sensorId]);
+  const sensor = useSensorStore((state) => state.deviceSensors[state.activeDeviceId]?.[sensorId]);
   if (!sensor) return null;
 
   const { value, min, max, unit, status, label } = sensor;
