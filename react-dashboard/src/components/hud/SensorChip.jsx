@@ -1,25 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import {
-  Thermometer,
-  Droplets,
-  Wind,
-  Activity,
-  AlertTriangle,
-  Skull,
-  Cloud,
-  Leaf,
-  Flame,
-  Gauge,
-  Zap,
-  ChevronDown,
-  TrendingUp,
-  TrendingDown,
-  Minus,
+  Thermometer, Droplets, Wind, Activity, AlertTriangle, Skull,
+  Cloud, Leaf, Flame, Gauge, Zap, ChevronDown,
+  TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
 import { useSensorStore } from '../../stores/useSensorStore';
 
-// Icon mapping for sensors
 const SENSOR_ICONS = {
   temperature: Thermometer,
   humidity: Droplets,
@@ -35,12 +22,6 @@ const SENSOR_ICONS = {
   current: Zap,
 };
 
-/**
- * SensorChip - A compact sensor display that expands on interaction
- *
- * Normal state: Small chip with icon, value, and status indicator
- * Expanded state: Full card with history chart and details
- */
 export function SensorChip({ sensorId, onClick }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const sensor = useSensorStore((state) => state.sensors[sensorId]);
@@ -51,42 +32,35 @@ export function SensorChip({ sensorId, onClick }) {
 
   const Icon = SENSOR_ICONS[sensorId] || Activity;
 
-  // Magma & Obsidian color scheme
-  const statusColors = {
+  const statusStyles = {
     normal: {
-      bg: 'bg-burnt-orange/10',
-      border: 'border-burnt-orange/30',
-      text: 'text-deep-amber',
-      glow: 'shadow-burnt-orange/20',
+      icon: 'bg-primary-lighter text-primary',
+      value: 'text-text-primary',
+      badge: 'bg-success-light text-success',
     },
     warning: {
-      bg: 'bg-warning-yellow/10',
-      border: 'border-warning-yellow/30',
-      text: 'text-warning-yellow',
-      glow: 'shadow-warning-yellow/20',
+      icon: 'bg-warning-light text-warning',
+      value: 'text-warning',
+      badge: 'bg-warning-light text-warning',
     },
     critical: {
-      bg: 'bg-strobe-red/10',
-      border: 'border-strobe-red/30',
-      text: 'text-strobe-red',
-      glow: 'shadow-strobe-red/30',
+      icon: 'bg-danger-light text-danger',
+      value: 'text-danger',
+      badge: 'bg-danger-light text-danger',
     },
     offline: {
-      bg: 'bg-warm-grey/10',
-      border: 'border-warm-grey/30',
-      text: 'text-warm-grey',
-      glow: '',
+      icon: 'bg-surface text-text-tertiary',
+      value: 'text-text-tertiary',
+      badge: 'bg-surface text-text-tertiary',
     },
   };
 
-  const colors = statusColors[sensor.status] || statusColors.normal;
+  const styles = statusStyles[sensor.status] || statusStyles.normal;
 
   const TrendIcon =
-    sensor.trend === 'rising'
-      ? TrendingUp
-      : sensor.trend === 'falling'
-        ? TrendingDown
-        : Minus;
+    sensor.trend === 'rising' ? TrendingUp
+    : sensor.trend === 'falling' ? TrendingDown
+    : Minus;
 
   const handleClick = () => {
     setIsExpanded(!isExpanded);
@@ -99,89 +73,48 @@ export function SensorChip({ sensorId, onClick }) {
     <motion.div
       layout
       className={`
-        relative rounded-xl overflow-hidden
-        backdrop-blur-xl border transition-all duration-300
-        ${colors.bg} ${colors.border}
-        ${isExpanded ? 'shadow-lg' : ''}
-        ${sensor.status === 'critical' ? `shadow-lg ${colors.glow}` : ''}
-        cursor-pointer
+        bg-card-bg border border-border rounded-2xl overflow-hidden
+        transition-all duration-200 cursor-pointer
+        hover:shadow-sm hover:border-border
+        ${sensor.status === 'critical' ? 'border-danger/30' : ''}
       `}
       onClick={handleClick}
-      animate={
-        sensor.status === 'critical' && !isExpanded
-          ? { scale: [1, 1.02, 1] }
-          : {}
-      }
-      transition={
-        sensor.status === 'critical'
-          ? { repeat: Infinity, duration: 1 }
-          : { duration: 0.2 }
-      }
     >
-      {/* Noise texture */}
-      <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Collapsed chip view */}
-      <motion.div
-        className="relative z-10 p-3 flex items-center gap-3"
-        layout
-      >
-        {/* Icon */}
-        <div
-          className={`
-            w-10 h-10 rounded-lg flex items-center justify-center
-            ${colors.bg} ${colors.text}
-          `}
-        >
-          <Icon size={20} />
+      {/* Main row */}
+      <motion.div className="p-3.5 flex items-center gap-3" layout>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${styles.icon}`}>
+          <Icon size={18} />
         </div>
-
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-white/80 text-sm font-medium truncate">
+            <span className="text-sm font-medium text-text-primary truncate">
               {sensor.label}
             </span>
             {sensor.status === 'critical' && (
-              <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-strobe-red opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-strobe-red"></span>
-              </span>
+              <span className="w-2 h-2 rounded-full bg-danger animate-pulse" />
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-lg font-rajdhani font-bold ${colors.text}`}>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={`text-lg font-display font-bold ${styles.value}`}>
               {sensor.value.toFixed(1)}
             </span>
-            <span className="text-white/40 text-xs">{sensor.unit}</span>
+            <span className="text-xs text-text-tertiary">{sensor.unit}</span>
             <TrendIcon
               size={12}
               className={
-                sensor.trend === 'rising'
-                  ? 'text-burnt-orange'
-                  : sensor.trend === 'falling'
-                    ? 'text-dim-grey'
-                    : 'text-white/30'
+                sensor.trend === 'rising' ? 'text-accent'
+                : sensor.trend === 'falling' ? 'text-primary'
+                : 'text-text-tertiary'
               }
             />
           </div>
         </div>
-
-        {/* Expand indicator */}
-        <motion.div
-          animate={{ rotate: isExpanded ? 180 : 0 }}
-          className="text-white/30"
-        >
+        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-text-tertiary">
           <ChevronDown size={16} />
         </motion.div>
       </motion.div>
 
-      {/* Expanded content */}
+      {/* Expanded */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -189,25 +122,18 @@ export function SensorChip({ sensorId, onClick }) {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-t border-white/10"
+            className="border-t border-border"
           >
-            <div className="p-3 space-y-3">
-              {/* Mini sparkline */}
+            <div className="p-3.5 space-y-3">
               <MiniSparkline data={sensor.history} status={sensor.status} />
-
-              {/* Stats grid */}
               <div className="grid grid-cols-3 gap-2 text-center">
                 <StatItem label="MIN" value={sensor.min} unit={sensor.unit} />
                 <StatItem label="CURRENT" value={sensor.value.toFixed(1)} unit={sensor.unit} highlight />
                 <StatItem label="MAX" value={sensor.max} unit={sensor.unit} />
               </div>
-
-              {/* Floor indicator */}
               <div className="flex items-center justify-between text-xs">
-                <span className="text-white/40">
-                  Position: Floor {sensor.position?.floor ?? 0}
-                </span>
-                <span className={`uppercase font-medium ${colors.text}`}>
+                <span className="text-text-tertiary">Floor {sensor.position?.floor ?? 0}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${styles.badge}`}>
                   {sensor.status}
                 </span>
               </div>
@@ -219,13 +145,10 @@ export function SensorChip({ sensorId, onClick }) {
   );
 }
 
-/**
- * MiniSparkline - Compact line chart for sensor history
- */
 function MiniSparkline({ data, status }) {
   if (!data || data.length < 2) {
     return (
-      <div className="h-12 flex items-center justify-center text-white/20 text-xs">
+      <div className="h-12 flex items-center justify-center text-text-tertiary text-xs">
         Collecting data...
       </div>
     );
@@ -234,11 +157,9 @@ function MiniSparkline({ data, status }) {
   const width = 180;
   const height = 48;
   const padding = 4;
-
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-
   const xStep = (width - padding * 2) / (data.length - 1);
 
   const points = data
@@ -249,97 +170,56 @@ function MiniSparkline({ data, status }) {
     })
     .join(' ');
 
-  // Ember theme sparkline colors
   const strokeColor =
-    status === 'critical'
-      ? '#FF0000'  // Strobe red
-      : status === 'warning'
-        ? '#FFBA08'  // Warning yellow
-        : '#FF8C00'; // Deep amber
+    status === 'critical' ? '#DC2626'
+    : status === 'warning' ? '#D97706'
+    : '#2D7A6F';
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full h-12"
-      preserveAspectRatio="none"
-    >
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-12" preserveAspectRatio="none">
       <defs>
-        <linearGradient id={`mini-grad-${status}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.2" />
+        <linearGradient id={`grad-${status}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.1" />
           <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
         </linearGradient>
       </defs>
-
-      {/* Grid lines */}
       {[0.25, 0.5, 0.75].map((y) => (
-        <line
-          key={y}
-          x1={padding}
-          y1={height * y}
-          x2={width - padding}
-          y2={height * y}
-          stroke="white"
-          strokeOpacity="0.05"
-          strokeDasharray="2,2"
+        <line key={y} x1={padding} y1={height * y} x2={width - padding} y2={height * y}
+          stroke="#E5E5E3" strokeWidth="0.5" strokeDasharray="2,2"
         />
       ))}
-
-      {/* Fill */}
       <polygon
         points={`${padding},${height - padding} ${points} ${width - padding},${height - padding}`}
-        fill={`url(#mini-grad-${status})`}
+        fill={`url(#grad-${status})`}
       />
-
-      {/* Line */}
-      <polyline
-        points={points}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <polyline points={points} fill="none" stroke={strokeColor}
+        strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
       />
-
-      {/* Current value dot */}
       {data.length > 0 && (
         <circle
           cx={width - padding}
           cy={height - padding - ((data[data.length - 1] - min) / range) * (height - padding * 2)}
-          r="3"
-          fill={strokeColor}
+          r="3" fill={strokeColor}
         />
       )}
     </svg>
   );
 }
 
-/**
- * StatItem - Small stat display
- */
 function StatItem({ label, value, unit, highlight = false }) {
   return (
     <div className="text-center">
-      <div className="text-white/40 text-[10px] uppercase tracking-wider">
-        {label}
-      </div>
-      <div
-        className={`font-mono text-sm ${
-          highlight ? 'text-deep-amber' : 'text-white/70'
-        }`}
-      >
+      <div className="text-text-tertiary text-[10px] uppercase tracking-wider">{label}</div>
+      <div className={`text-sm font-medium ${highlight ? 'text-primary font-semibold' : 'text-text-secondary'}`}>
         {value}
-        <span className="text-[10px] text-white/30 ml-0.5">{unit}</span>
+        <span className="text-[10px] text-text-tertiary ml-0.5">{unit}</span>
       </div>
     </div>
   );
 }
 
-/**
- * SensorChipGrid - Grid layout for multiple sensor chips
- */
 export function SensorChipGrid({ className = '' }) {
   const sensors = useSensorStore((state) => state.sensors);
-
   return (
     <div className={`grid grid-cols-1 gap-2 ${className}`}>
       {Object.keys(sensors).map((id) => (
