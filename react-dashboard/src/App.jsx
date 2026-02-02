@@ -11,6 +11,10 @@ import GlassPanel, { GlassCard } from './components/ui/GlassPanel';
 import { useMQTTSimulator } from './hooks/useMQTT';
 import { useSensorStore, SENSOR_CONFIG } from './stores/useSensorStore';
 
+import AnalyticsPage from './pages/AnalyticsPage';
+import AlertsPage from './pages/AlertsPage';
+import SettingsPage from './pages/SettingsPage';
+
 import {
   Activity, Shield, AlertCircle, CheckCircle, Flame, Zap,
   Thermometer, Wind, Search, MapPin, ChevronRight, ArrowUpRight,
@@ -584,24 +588,14 @@ function QuickStat({ sensorId, icon: Icon, color, sensors }) {
   );
 }
 
-/* ═══════════════════════ Placeholder ═══════════════════════ */
-function PlaceholderPage({ title, icon: Icon }) {
-  return (
-    <motion.div className="h-full p-6 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="text-center max-w-xs">
-        <div className="w-16 h-16 mx-auto mb-5 rounded-[18px] bg-primary-lighter flex items-center justify-center text-primary"><Icon size={28} /></div>
-        <h2 className="font-display font-bold text-xl text-text-primary mb-2">{title}</h2>
-        <p className="text-text-tertiary text-[13px]">This feature is coming soon.</p>
-      </div>
-    </motion.div>
-  );
-}
-
 /* ═══════════════════════ App ═══════════════════════ */
 export default function App() {
   const [isBooting, setIsBooting] = useState(true);
   const activePage = useSensorStore((s) => s.activePage);
+  const theme = useSensorStore((s) => s.theme);
   useMQTTSimulator();
+
+  const isDark = theme === 'dark';
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-page-bg flex">
@@ -617,9 +611,9 @@ export default function App() {
               <AnimatePresence mode="wait">
                 {activePage === 'dashboard' && <DashboardPage key="dashboard" />}
                 {activePage === 'sensors' && <SensorsPage key="sensors" />}
-                {activePage === 'analytics' && <PlaceholderPage key="analytics" title="Analytics" icon={BarChart3} />}
-                {activePage === 'alerts' && <PlaceholderPage key="alerts" title="Alert History" icon={Bell} />}
-                {activePage === 'settings' && <PlaceholderPage key="settings" title="Settings" icon={Shield} />}
+                {activePage === 'analytics' && <AnalyticsPage key="analytics" />}
+                {activePage === 'alerts' && <AlertsPage key="alerts" />}
+                {activePage === 'settings' && <SettingsPage key="settings" />}
               </AnimatePresence>
             </main>
           </div>

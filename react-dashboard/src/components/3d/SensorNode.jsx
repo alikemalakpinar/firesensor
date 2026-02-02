@@ -4,30 +4,21 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSensorStore } from '../../stores/useSensorStore';
 
-const NODE_COLORS = {
-  normal: {
-    core: new THREE.Color('#2D7A6F'),
-    glow: new THREE.Color('#3A9E8F'),
-    intensity: 1,
-  },
-  warning: {
-    core: new THREE.Color('#D97706'),
-    glow: new THREE.Color('#F59E0B'),
-    intensity: 1.5,
-  },
-  critical: {
-    core: new THREE.Color('#DC2626'),
-    glow: new THREE.Color('#EF4444'),
-    intensity: 2.5,
-  },
-  offline: {
-    core: new THREE.Color('#9CA3AF'),
-    glow: new THREE.Color('#D1D5DB'),
-    intensity: 0.3,
-  },
+const LIGHT_COLORS = {
+  normal: { core: new THREE.Color('#2D7A6F'), glow: new THREE.Color('#3A9E8F'), intensity: 1 },
+  warning: { core: new THREE.Color('#D97706'), glow: new THREE.Color('#F59E0B'), intensity: 1.5 },
+  critical: { core: new THREE.Color('#DC2626'), glow: new THREE.Color('#EF4444'), intensity: 2.5 },
+  offline: { core: new THREE.Color('#9CA3AF'), glow: new THREE.Color('#D1D5DB'), intensity: 0.3 },
 };
 
-export function SensorNode({ sensorId, position, onClick }) {
+const DARK_COLORS = {
+  normal: { core: new THREE.Color('#00F0FF'), glow: new THREE.Color('#33F5FF'), intensity: 2.0 },
+  warning: { core: new THREE.Color('#FFB800'), glow: new THREE.Color('#FFD000'), intensity: 2.5 },
+  critical: { core: new THREE.Color('#FF4757'), glow: new THREE.Color('#FF6B7A'), intensity: 4.0 },
+  offline: { core: new THREE.Color('#64748B'), glow: new THREE.Color('#94A3B8'), intensity: 0.5 },
+};
+
+export function SensorNode({ sensorId, position, onClick, isDark = false }) {
   const groupRef = useRef();
   const coreRef = useRef();
   const glowRef = useRef();
@@ -38,27 +29,28 @@ export function SensorNode({ sensorId, position, onClick }) {
 
   const isSelected = selectedSensor === sensorId;
   const status = sensor?.status || 'normal';
-  const colors = NODE_COLORS[status] || NODE_COLORS.normal;
+  const colorMap = isDark ? DARK_COLORS : LIGHT_COLORS;
+  const colors = colorMap[status] || colorMap.normal;
 
   const materials = useMemo(() => ({
     core: new THREE.MeshStandardMaterial({
       color: colors.core,
       emissive: colors.core,
       emissiveIntensity: colors.intensity,
-      metalness: 0.3,
-      roughness: 0.4,
+      metalness: isDark ? 0.5 : 0.3,
+      roughness: isDark ? 0.2 : 0.4,
     }),
     glow: new THREE.MeshBasicMaterial({
       color: colors.glow,
       transparent: true,
-      opacity: 0.4,
+      opacity: isDark ? 0.6 : 0.4,
     }),
     line: new THREE.LineBasicMaterial({
       color: colors.core,
       transparent: true,
-      opacity: 0.2,
+      opacity: isDark ? 0.4 : 0.2,
     }),
-  }), [colors]);
+  }), [colors, isDark]);
 
   const lineGeometry = useMemo(() => {
     const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -position.y + 0.5, 0)];
@@ -70,16 +62,16 @@ export function SensorNode({ sensorId, position, onClick }) {
     const isCritical = status === 'critical';
 
     if (coreRef.current) {
-      const speed = isCritical ? 6 : 1.5;
-      const range = isCritical ? 1.5 : 0.2;
+      const speed = isCritical ? 6 : isDark ? 2 : 1.5;
+      const range = isCritical ? 1.5 : isDark ? 0.5 : 0.2;
       coreRef.current.material.emissiveIntensity = colors.intensity + Math.sin(time * speed) * range;
-      const breathe = 1 + Math.sin(time * speed * 0.5) * 0.03;
+      const breathe = 1 + Math.sin(time * speed * 0.5) * (isDark ? 0.05 : 0.03);
       coreRef.current.scale.setScalar(breathe);
     }
 
     if (glowRef.current) {
       glowRef.current.rotation.y = time * 0.3;
-      glowRef.current.material.opacity = 0.3 + Math.sin(time * 2) * 0.1;
+      glowRef.current.material.opacity = (isDark ? 0.5 : 0.3) + Math.sin(time * 2) * 0.1;
     }
 
     if (groupRef.current) {
@@ -96,6 +88,10 @@ export function SensorNode({ sensorId, position, onClick }) {
     onClick?.(sensorId);
   };
 
+  const lightColor = isDark
+    ? (status === 'critical' ? '#FF4757' : '#00F0FF')
+    : (status === 'critical' ? '#DC2626' : '#2D7A6F');
+
   return (
     <group ref={groupRef} position={[position.x, position.y, position.z]} onClick={handleClick}>
       <mesh ref={coreRef}>
@@ -110,9 +106,9 @@ export function SensorNode({ sensorId, position, onClick }) {
         <primitive object={materials.line} attach="material" />
       </line>
       <pointLight
-        color={status === 'critical' ? '#DC2626' : '#2D7A6F'}
-        intensity={status === 'critical' ? 2 : 0.8}
-        distance={5}
+        color={lightColor}
+        intensity={isDark ? (status === 'critical' ? 3 : 1.5) : (status === 'critical' ? 2 : 0.8)}
+        distance={isDark ? 8 : 5}
         decay={2}
       />
       {isSelected && (
@@ -121,7 +117,11 @@ export function SensorNode({ sensorId, position, onClick }) {
             <div className="tooltip-header">
               <span className="tooltip-label">{sensor.label}</span>
               <span className="tooltip-status" style={{
-                color: status === 'critical' ? '#DC2626' : status === 'warning' ? '#D97706' : '#2D7A6F'
+                color: status === 'critical'
+                  ? (isDark ? '#FF4757' : '#DC2626')
+                  : status === 'warning'
+                    ? (isDark ? '#FFB800' : '#D97706')
+                    : (isDark ? '#00F0FF' : '#2D7A6F')
               }}>
                 {status.toUpperCase()}
               </span>
@@ -137,12 +137,12 @@ export function SensorNode({ sensorId, position, onClick }) {
   );
 }
 
-export function SensorNodes({ onSensorClick }) {
+export function SensorNodes({ onSensorClick, isDark = false }) {
   const sensors = useSensorStore((state) => state.deviceSensors[state.activeDeviceId] || {});
   return (
     <group>
       {Object.values(sensors).map((sensor) => (
-        <SensorNode key={sensor.id} sensorId={sensor.id} position={sensor.position} onClick={onSensorClick} />
+        <SensorNode key={sensor.id} sensorId={sensor.id} position={sensor.position} onClick={onSensorClick} isDark={isDark} />
       ))}
     </group>
   );

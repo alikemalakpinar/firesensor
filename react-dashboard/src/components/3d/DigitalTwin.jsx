@@ -11,7 +11,7 @@ import { Building } from './Building';
 import { SensorNodes } from './SensorNode';
 import { useSensorStore } from '../../stores/useSensorStore';
 
-function CleanLighting() {
+function LightModeLighting() {
   return (
     <>
       <ambientLight intensity={0.6} color="#ffffff" />
@@ -30,6 +30,33 @@ function CleanLighting() {
       <pointLight position={[-8, 10, 5]} intensity={0.4} color="#E8F5F2" distance={30} decay={2} />
       <pointLight position={[10, 8, -8]} intensity={0.3} color="#FFF0E5" distance={25} decay={2} />
       <hemisphereLight intensity={0.3} color="#E8F5F2" groundColor="#F2F1EC" />
+    </>
+  );
+}
+
+function DarkModeLighting() {
+  return (
+    <>
+      <ambientLight intensity={0.08} color="#0a0a1a" />
+      <directionalLight
+        position={[10, 20, 10]}
+        intensity={0.15}
+        color="#1a1a3e"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={50}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+      />
+      {/* Neon cyan rim light */}
+      <pointLight position={[-10, 12, 8]} intensity={1.2} color="#00F0FF" distance={40} decay={2} />
+      {/* Neon pink fill light */}
+      <pointLight position={[12, 8, -10]} intensity={0.8} color="#FF2A6D" distance={35} decay={2} />
+      {/* Cool accent from below */}
+      <pointLight position={[0, -2, 0]} intensity={0.4} color="#00F0FF" distance={20} decay={2} />
+      <hemisphereLight intensity={0.05} color="#00F0FF" groundColor="#FF2A6D" />
     </>
   );
 }
@@ -69,7 +96,7 @@ function CameraController() {
   );
 }
 
-function CleanPostProcessing() {
+function LightPostProcessing() {
   return (
     <EffectComposer>
       <Bloom intensity={0.3} luminanceThreshold={0.6} luminanceSmoothing={0.9} mipmapBlur radius={0.6} />
@@ -78,29 +105,43 @@ function CleanPostProcessing() {
   );
 }
 
-function Scene({ onSensorClick }) {
+function DarkPostProcessing() {
+  return (
+    <EffectComposer>
+      <Bloom intensity={1.5} luminanceThreshold={0.2} luminanceSmoothing={0.8} mipmapBlur radius={0.8} />
+      <VignetteEffect offset={0.4} darkness={0.6} blendFunction={BlendFunction.NORMAL} />
+    </EffectComposer>
+  );
+}
+
+function Scene({ onSensorClick, isDark }) {
   return (
     <>
       <PerspectiveCamera makeDefault position={[22, 14, 22]} fov={45} near={0.1} far={1000} />
       <CameraController />
-      <CleanLighting />
-      <Building />
-      <SensorNodes onSensorClick={onSensorClick} />
-      <fog attach="fog" args={['#F2F1EC', 30, 80]} />
+      {isDark ? <DarkModeLighting /> : <LightModeLighting />}
+      <Building isDark={isDark} />
+      <SensorNodes onSensorClick={onSensorClick} isDark={isDark} />
+      <fog attach="fog" args={[isDark ? '#050508' : '#F2F1EC', isDark ? 40 : 30, isDark ? 100 : 80]} />
     </>
   );
 }
 
 function LoadingFallback() {
+  const theme = useSensorStore((state) => state.theme);
   return (
     <mesh>
       <boxGeometry args={[2, 2, 2]} />
-      <meshBasicMaterial color="#2D7A6F" wireframe />
+      <meshBasicMaterial color={theme === 'dark' ? '#00F0FF' : '#2D7A6F'} wireframe />
     </mesh>
   );
 }
 
 export function DigitalTwin({ onSensorClick, className = '' }) {
+  const theme = useSensorStore((state) => state.theme);
+  const isDark = theme === 'dark';
+  const bgColor = isDark ? '#050508' : '#F2F1EC';
+
   return (
     <div className={`w-full h-full ${className}`}>
       <Canvas
@@ -112,14 +153,14 @@ export function DigitalTwin({ onSensorClick, className = '' }) {
           powerPreference: 'high-performance',
           stencil: false,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.4,
+          toneMappingExposure: isDark ? 1.0 : 1.4,
         }}
-        style={{ background: '#F2F1EC' }}
+        style={{ background: bgColor }}
       >
-        <color attach="background" args={['#F2F1EC']} />
+        <color attach="background" args={[bgColor]} />
         <Suspense fallback={<LoadingFallback />}>
-          <Scene onSensorClick={onSensorClick} />
-          <CleanPostProcessing />
+          <Scene onSensorClick={onSensorClick} isDark={isDark} />
+          {isDark ? <DarkPostProcessing /> : <LightPostProcessing />}
         </Suspense>
       </Canvas>
     </div>

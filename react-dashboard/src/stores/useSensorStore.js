@@ -94,6 +94,7 @@ export const useSensorStore = create(
     lastMessageTime: null,
 
     // UI state
+    theme: 'light',
     selectedSensor: null,
     activePage: 'dashboard',
     sidebarCollapsed: false,
@@ -249,6 +250,15 @@ export const useSensorStore = create(
     setActivePage: (page) => set({ activePage: page }),
     toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
     setCameraTarget: (target) => set({ cameraTarget: target }),
+    toggleTheme: () => {
+      const newTheme = get().theme === 'light' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      set({ theme: newTheme });
+    },
+    setTheme: (theme) => {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      set({ theme });
+    },
 
     getCriticalSensors: () => {
       const state = get();
