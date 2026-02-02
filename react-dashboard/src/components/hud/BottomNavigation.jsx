@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Cpu, BarChart3, Bell, Settings, Flame, Plus,
-  Building2, Server, Warehouse, MapPin, ChevronDown, Check, X,
+  Building2, Server, Warehouse, MapPin, Check, X,
+  Sun, Moon,
 } from 'lucide-react';
 import { useSensorStore } from '../../stores/useSensorStore';
 
@@ -20,6 +21,8 @@ export function BottomNavigation() {
   const activeDeviceId = useSensorStore((state) => state.activeDeviceId);
   const setActiveDevice = useSensorStore((state) => state.setActiveDevice);
   const addDevice = useSensorStore((state) => state.addDevice);
+  const theme = useSensorStore((state) => state.theme);
+  const toggleTheme = useSensorStore((state) => state.toggleTheme);
 
   const [showDevicePanel, setShowDevicePanel] = useState(false);
   const [showAddDevice, setShowAddDevice] = useState(false);
@@ -54,6 +57,8 @@ export function BottomNavigation() {
     setActiveDevice(id);
   };
 
+  const isDark = theme === 'dark';
+
   return (
     <motion.nav
       className="fixed left-0 top-0 bottom-0 w-[72px] z-50 flex flex-col items-center bg-sidebar-bg border-r border-border"
@@ -64,10 +69,12 @@ export function BottomNavigation() {
       {/* Logo */}
       <div className="pt-5 pb-4">
         <button
-          className="w-11 h-11 rounded-2xl bg-text-primary flex items-center justify-center relative group"
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center relative group ${
+            isDark ? 'bg-primary glow-cyan' : 'bg-text-primary'
+          }`}
           onClick={() => setActivePage('dashboard')}
         >
-          <Flame className="text-white" size={20} />
+          <Flame className={isDark ? 'text-text-inverse' : 'text-white'} size={20} />
           {systemStatus === 'critical' && (
             <motion.span
               className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-danger border-2 border-sidebar-bg"
@@ -84,7 +91,9 @@ export function BottomNavigation() {
           className={`w-full h-11 rounded-xl flex items-center justify-center transition-all duration-200 relative ${
             showDevicePanel
               ? 'bg-primary text-white'
-              : 'bg-surface-dark text-text-secondary hover:bg-primary-lighter hover:text-primary'
+              : isDark
+                ? 'bg-surface text-text-secondary hover:bg-primary-lighter hover:text-primary'
+                : 'bg-surface-dark text-text-secondary hover:bg-primary-lighter hover:text-primary'
           }`}
           onClick={() => setShowDevicePanel(!showDevicePanel)}
         >
@@ -111,8 +120,12 @@ export function BottomNavigation() {
               <button
                 className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 ${
                   isActive
-                    ? 'bg-text-primary text-white shadow-sm'
-                    : 'text-text-tertiary hover:text-text-primary hover:bg-surface-dark'
+                    ? isDark
+                      ? 'bg-primary text-text-inverse shadow-sm glow-cyan'
+                      : 'bg-text-primary text-white shadow-sm'
+                    : isDark
+                      ? 'text-text-tertiary hover:text-primary hover:bg-primary-lighter'
+                      : 'text-text-tertiary hover:text-text-primary hover:bg-surface-dark'
                 }`}
                 onClick={() => setActivePage(item.id)}
               >
@@ -120,7 +133,9 @@ export function BottomNavigation() {
               </button>
               {/* Tooltip */}
               <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
-                <div className="bg-text-primary text-white text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
+                <div className={`text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg ${
+                  isDark ? 'bg-primary text-text-inverse' : 'bg-text-primary text-white'
+                }`}>
                   {item.label}
                 </div>
               </div>
@@ -129,20 +144,49 @@ export function BottomNavigation() {
         })}
       </div>
 
-      {/* Bottom */}
+      {/* Bottom: Theme Toggle + Add + Avatar */}
       <div className="flex flex-col items-center gap-2 pb-5">
+        {/* Theme Toggle */}
         <button
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary hover:bg-primary-lighter transition-all duration-200"
+          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 ${
+            isDark
+              ? 'text-primary hover:bg-primary-lighter glow-cyan'
+              : 'text-text-tertiary hover:text-accent hover:bg-accent-light'
+          }`}
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          <AnimatePresence mode="wait">
+            {isDark ? (
+              <motion.div key="sun" initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: 90, scale: 0 }} transition={{ duration: 0.2 }}>
+                <Sun size={20} />
+              </motion.div>
+            ) : (
+              <motion.div key="moon" initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} exit={{ rotate: -90, scale: 0 }} transition={{ duration: 0.2 }}>
+                <Moon size={20} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </button>
+
+        <button
+          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 ${
+            isDark
+              ? 'text-text-tertiary hover:text-primary hover:bg-primary-lighter'
+              : 'text-text-tertiary hover:text-primary hover:bg-primary-lighter'
+          }`}
           onClick={() => { setShowDevicePanel(true); setShowAddDevice(true); }}
         >
           <Plus size={20} />
         </button>
-        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span className="text-white text-xs font-bold">FL</span>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
+          isDark ? 'bg-primary glow-cyan' : 'bg-primary'
+        }`}>
+          <span className={`text-xs font-bold ${isDark ? 'text-text-inverse' : 'text-white'}`}>FL</span>
         </div>
       </div>
 
-      {/* Device Panel (slides from left sidebar) */}
+      {/* Device Panel */}
       <AnimatePresence>
         {showDevicePanel && (
           <>
@@ -154,7 +198,9 @@ export function BottomNavigation() {
               onClick={() => { setShowDevicePanel(false); setShowAddDevice(false); }}
             />
             <motion.div
-              className="fixed left-[72px] top-0 bottom-0 w-72 bg-card-bg border-r border-border z-50 shadow-xl flex flex-col"
+              className={`fixed left-[72px] top-0 bottom-0 w-72 border-r border-border z-50 shadow-xl flex flex-col ${
+                isDark ? 'bg-sidebar-bg backdrop-blur-xl glow-card' : 'bg-card-bg'
+              }`}
               initial={{ x: -288, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -288, opacity: 0 }}
@@ -182,8 +228,12 @@ export function BottomNavigation() {
                       key={device.id}
                       className={`w-full p-3.5 rounded-xl text-left transition-all duration-200 border ${
                         isActive
-                          ? 'bg-primary-lighter border-primary/20 shadow-sm'
-                          : 'bg-card-bg border-border hover:border-primary/20 hover:shadow-sm'
+                          ? isDark
+                            ? 'bg-primary-lighter border-primary/30 shadow-sm glow-cyan'
+                            : 'bg-primary-lighter border-primary/20 shadow-sm'
+                          : isDark
+                            ? 'bg-surface border-border hover:border-primary/20'
+                            : 'bg-card-bg border-border hover:border-primary/20 hover:shadow-sm'
                       }`}
                       onClick={() => { setActiveDevice(device.id); setShowDevicePanel(false); }}
                       whileTap={{ scale: 0.98 }}
