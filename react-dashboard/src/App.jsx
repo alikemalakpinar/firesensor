@@ -1,15 +1,15 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { DigitalTwin } from './components/3d/DigitalTwin';
 import { Sidebar, MiniStatusBar } from './components/hud/Sidebar';
 import { Vignette, AlertBanner } from './components/hud/Vignette';
-import { SensorChipGrid } from './components/hud/SensorChip';
 import GlassPanel from './components/ui/GlassPanel';
 
 import { useMQTTSimulator } from './hooks/useMQTT';
 import { useSensorStore, SENSOR_CONFIG } from './stores/useSensorStore';
 
+import SensorsPage from './pages/SensorsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -18,7 +18,7 @@ import {
   Activity, Shield, Flame, Zap, Thermometer, Wind, MapPin,
   ChevronRight, ChevronDown, ArrowUpRight, Droplets, Clock,
   Building2, Skull, AlertTriangle, Gauge, Leaf, Cloud,
-  Maximize2, Code2, Eye, TrendingUp,
+  Maximize2, Code2, Eye, TrendingUp, X,
 } from 'lucide-react';
 
 import './index.css';
@@ -75,7 +75,6 @@ function FloatingTopBar() {
   const devices = useSensorStore((s) => s.devices);
   const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
   const setActiveDevice = useSensorStore((s) => s.setActiveDevice);
-  const activeDevice = devices.find((d) => d.id === activeDeviceId);
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(t); }, []);
 
@@ -84,7 +83,6 @@ function FloatingTopBar() {
       className="absolute top-4 left-1/2 -translate-x-1/2 z-nav glass-strong rounded-2xl px-1 py-1 flex items-center gap-1"
       initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
     >
-      {/* Logo */}
       <div className="flex items-center gap-2 px-3 py-1.5">
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
           <Flame className="text-white" size={14} />
@@ -92,11 +90,7 @@ function FloatingTopBar() {
         <span className="font-display font-bold text-sm text-text-primary tracking-tight">FIRELINK</span>
       </div>
 
-      {/* Device Tabs */}
       <div className="flex items-center gap-0.5 px-1">
-        <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface transition-colors">
-          <ChevronRight size={14} className="rotate-180" />
-        </button>
         {devices.map((device) => {
           const isActive = device.id === activeDeviceId;
           const hasCritical = device.status === 'critical';
@@ -115,12 +109,8 @@ function FloatingTopBar() {
             </button>
           );
         })}
-        <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface transition-colors">
-          <ChevronRight size={14} />
-        </button>
       </div>
 
-      {/* Right side */}
       <div className="flex items-center gap-2 px-3 border-l border-border ml-1">
         <MiniStatusBar />
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface text-xs text-text-secondary font-mono tabular-nums">
@@ -132,7 +122,7 @@ function FloatingTopBar() {
   );
 }
 
-/* ═══════════════════════ Sparkline (compact) ═══════════════════════ */
+/* ═══════════════════════ Sparkline ═══════════════════════ */
 function Sparkline({ data, color = '#2D7A6F', width = 80, height = 28, filled = true }) {
   if (!data || data.length < 2) return <div style={{ width, height }} />;
   const min = Math.min(...data); const max = Math.max(...data); const range = max - min || 1;
@@ -153,7 +143,7 @@ function Sparkline({ data, color = '#2D7A6F', width = 80, height = 28, filled = 
   );
 }
 
-/* ═══════════════════════ Gauge Bar (like reference Temp & Pressure) ═══════════════════════ */
+/* ═══════════════════════ Gauge Bar ═══════════════════════ */
 function GaugeBar({ value, min, max, color = '#2D7A6F', label, unit }) {
   const pct = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
   const segments = 8;
@@ -165,12 +155,12 @@ function GaugeBar({ value, min, max, color = '#2D7A6F', label, unit }) {
       </div>
       <div className="flex gap-[3px]">
         {Array.from({ length: segments }).map((_, i) => {
-          const filled = i < Math.round(pct / 100 * segments);
+          const isFilled = i < Math.round(pct / 100 * segments);
           return (
             <motion.div
               key={i}
               className="flex-1 h-[6px] rounded-sm"
-              style={{ backgroundColor: filled ? color : 'var(--border-color)' }}
+              style={{ backgroundColor: isFilled ? color : 'var(--border-color)' }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: i * 0.03, duration: 0.2 }}
@@ -216,12 +206,100 @@ function AccordionItem({ label, children, defaultOpen = false }) {
   );
 }
 
-/* ═══════════════════════ Dashboard HUD (Floating Layout) ═══════════════════════ */
+/* ═══════════════════════ Sensor Detail Overlay ═══════════════════════ */
+function SensorDetailOverlay() {
+  const selectedSensor = useSensorStore((s) => s.selectedSensor);
+  const sensor = useSensorStore((s) => s.deviceSensors[s.activeDeviceId]?.[s.selectedSensor]);
+  const selectSensor = useSensorStore((s) => s.selectSensor);
+  const setCameraTarget = useSensorStore((s) => s.setCameraTarget);
+  const activePage = useSensorStore((s) => s.activePage);
+
+  // Only show on dashboard
+  if (activePage !== 'dashboard') return null;
+
+  const handleClose = () => {
+    selectSensor(null);
+    setCameraTarget(null);
+  };
+
+  if (!selectedSensor || !sensor) return null;
+
+  const Icon = ICON_MAP[selectedSensor] || Activity;
+  const config = SENSOR_CONFIG[selectedSensor] || {};
+  const statusColor = sensor.status === 'critical' ? '#DC2626' : sensor.status === 'warning' ? '#D97706' : '#2D7A6F';
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="sensor-overlay"
+        className="absolute top-20 left-1/2 -translate-x-1/2 z-[35] w-[380px]"
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      >
+        <div className="glass-strong rounded-2xl p-5 shadow-2xl backdrop-blur-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: statusColor + '14', color: statusColor }}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-text-primary">{sensor.label}</h3>
+                <p className="text-[10px] text-text-tertiary">Floor {sensor.position?.floor ?? 0} &middot; Last update {sensor.lastUpdate ? new Date(sensor.lastUpdate).toLocaleTimeString() : 'N/A'}</p>
+              </div>
+            </div>
+            <button className="w-8 h-8 rounded-lg flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface transition-colors" onClick={handleClose}>
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Value */}
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className="font-display font-bold text-4xl text-text-primary tabular-nums">{sensor.value.toFixed(1)}</span>
+            <span className="text-sm text-text-tertiary">{sensor.unit}</span>
+            <span className="ml-auto text-xs font-bold uppercase px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: statusColor + '12', color: statusColor }}>
+              {sensor.status}
+            </span>
+          </div>
+
+          {/* Sparkline */}
+          <div className="mb-4 p-3 rounded-xl bg-surface">
+            <Sparkline data={sensor.history?.slice(-30)} color={statusColor} width={320} height={60} />
+          </div>
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="p-2 rounded-xl bg-surface">
+              <p className="text-[10px] text-text-tertiary uppercase tracking-wider mb-0.5">Min</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{config.min ?? '—'}</p>
+            </div>
+            <div className="p-2 rounded-xl bg-surface">
+              <p className="text-[10px] text-text-tertiary uppercase tracking-wider mb-0.5">Current</p>
+              <p className="text-sm font-bold tabular-nums" style={{ color: statusColor }}>{sensor.value.toFixed(1)}</p>
+            </div>
+            <div className="p-2 rounded-xl bg-surface">
+              <p className="text-[10px] text-text-tertiary uppercase tracking-wider mb-0.5">Max</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{config.max ?? '—'}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ═══════════════════════ Dashboard HUD ═══════════════════════ */
 function DashboardPage() {
   const sensors = useSensorStore((s) => s.deviceSensors[s.activeDeviceId] || {});
   const devices = useSensorStore((s) => s.devices);
   const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
   const panelHealth = useSensorStore((s) => s.panelHealth);
+  const selectSensor = useSensorStore((s) => s.selectSensor);
+  const setCameraTarget = useSensorStore((s) => s.setCameraTarget);
   const activeDevice = devices.find((d) => d.id === activeDeviceId);
 
   const tempSensor = sensors.temperature;
@@ -234,20 +312,27 @@ function DashboardPage() {
   const currentSensor = sensors.current;
 
   const criticalCount = Object.values(sensors).filter((s) => s.status === 'critical').length;
-  const normalCount = Object.values(sensors).filter((s) => s.status === 'normal').length;
   const sensorCount = Object.keys(sensors).length;
+
+  const handleSensorClick = useCallback((sensorId) => {
+    selectSensor(sensorId);
+    setCameraTarget(sensorId);
+  }, [selectSensor, setCameraTarget]);
 
   return (
     <div className="absolute inset-0">
-      {/* ═══ FULL SCREEN 3D BACKGROUND ═══ */}
+      {/* FULL SCREEN 3D BACKGROUND */}
       <div className="absolute inset-0 z-3d">
-        <DigitalTwin />
+        <DigitalTwin onSensorClick={handleSensorClick} />
       </div>
 
-      {/* ═══ FLOATING TOP BAR ═══ */}
+      {/* FLOATING TOP BAR */}
       <FloatingTopBar />
 
-      {/* ═══ HIGH TEMP ALERT (floating label on 3D) ═══ */}
+      {/* SENSOR DETAIL OVERLAY */}
+      <SensorDetailOverlay />
+
+      {/* HIGH TEMP ALERT */}
       {criticalCount > 0 && (
         <motion.div className="absolute top-20 left-1/2 -translate-x-1/2 z-hud"
           initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
@@ -259,12 +344,11 @@ function DashboardPage() {
         </motion.div>
       )}
 
-      {/* ═══ LEFT PANEL COLUMN ═══ */}
+      {/* LEFT PANEL COLUMN */}
       <motion.div
         className="absolute left-5 top-20 bottom-[220px] w-[260px] z-hud flex flex-col gap-3 overflow-hidden"
         initial="hidden" animate="visible" variants={stagger.container}
       >
-        {/* Building Data Panel */}
         <motion.div className="glass rounded-2xl p-4" variants={stagger.slideLeft}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Building Data</span>
@@ -285,11 +369,9 @@ function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Status Panel */}
         <motion.div className="glass rounded-2xl p-4 flex-1 overflow-auto" variants={stagger.slideLeft}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Status</span>
-            <ChevronDown size={14} className="text-text-tertiary" />
           </div>
           <div className="space-y-0.5">
             <StatusRow label="Fire Detection" active={true} color="#16A34A" />
@@ -301,28 +383,22 @@ function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* ═══ RIGHT PANEL COLUMN ═══ */}
+      {/* RIGHT PANEL COLUMN */}
       <motion.div
         className="absolute right-5 top-20 bottom-[220px] w-[260px] z-hud flex flex-col gap-3 overflow-hidden"
         initial="hidden" animate="visible" variants={stagger.container}
       >
-        {/* Preset Buttons */}
         <motion.div className="flex items-center gap-2" variants={stagger.slideRight}>
           <button className="flex-1 glass rounded-xl px-3 py-2 text-xs font-semibold text-text-primary text-center hover:bg-card-hover transition-colors">A-PRESET</button>
           <button className="flex-1 glass-subtle rounded-xl px-3 py-2 text-xs font-medium text-text-secondary text-center hover:bg-card-hover transition-colors">B-PRESET</button>
           <button className="w-9 h-9 glass-subtle rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">+</button>
         </motion.div>
 
-        {/* Temp & Pressure Panel */}
         <motion.div className="glass rounded-2xl p-4" variants={stagger.slideRight}>
           <AccordionItem label="Temp & Pressure" defaultOpen={true}>
             <div className="space-y-4">
-              {tempSensor && (
-                <GaugeBar value={tempSensor.value} min={0} max={80} color="#2D7A6F" label="Temperature (°C)" unit="°C" />
-              )}
-              {pressureSensor && (
-                <GaugeBar value={pressureSensor.value} min={900} max={1100} color="#6366F1" label="Pressure (Pa)" unit="Pa" />
-              )}
+              {tempSensor && <GaugeBar value={tempSensor.value} min={0} max={80} color="#2D7A6F" label="Temperature (°C)" unit="°C" />}
+              {pressureSensor && <GaugeBar value={pressureSensor.value} min={900} max={1100} color="#6366F1" label="Pressure (Pa)" unit="Pa" />}
               {currentSensor && (
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-[11px] text-text-secondary">Output</span>
@@ -335,7 +411,6 @@ function DashboardPage() {
           </AccordionItem>
         </motion.div>
 
-        {/* Extra accordion sections */}
         <motion.div className="glass rounded-2xl px-4 py-1 flex-1 overflow-auto" variants={stagger.slideRight}>
           <AccordionItem label="Air Quality">
             <div className="space-y-3">
@@ -359,7 +434,7 @@ function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* ═══ BOTTOM-LEFT CORNER UTILS ═══ */}
+      {/* BOTTOM-LEFT CORNER UTILS */}
       <motion.div className="absolute left-5 bottom-[226px] z-hud flex items-center gap-2"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
         <button className="w-9 h-9 glass rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">
@@ -370,7 +445,7 @@ function DashboardPage() {
         </button>
       </motion.div>
 
-      {/* ═══ BOTTOM-RIGHT CORNER UTILS ═══ */}
+      {/* BOTTOM-RIGHT CORNER UTILS */}
       <motion.div className="absolute right-5 bottom-[226px] z-hud"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
         <button className="w-9 h-9 glass rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">
@@ -378,15 +453,14 @@ function DashboardPage() {
         </button>
       </motion.div>
 
-      {/* ═══ BOTTOM ROW: 3 DATA CARDS ═══ */}
+      {/* BOTTOM ROW: 3 DATA CARDS */}
       <motion.div
         className="absolute left-5 right-5 bottom-4 z-hud grid grid-cols-3 gap-3"
         initial="hidden" animate="visible" variants={stagger.container}
       >
-        {/* Card 1: System Health (like Energy Generating) */}
+        {/* Card 1: System Health */}
         <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
           <p className="text-[10px] font-bold text-primary tracking-wider uppercase mb-4">System Health</p>
-          {/* Dotted ring gauge */}
           <div className="flex items-center justify-center mb-3">
             <div className="relative">
               <svg width="120" height="120" viewBox="0 0 120 120">
@@ -418,7 +492,7 @@ function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Card 2: Primary Sensor Detail (like Turbine Stability) */}
+        {/* Card 2: Temperature Monitor */}
         <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
           <p className="text-[10px] font-bold text-text-primary tracking-wider uppercase text-center mb-3">Temperature Monitor</p>
           {tempSensor && (
@@ -430,7 +504,6 @@ function DashboardPage() {
                   {tempSensor.status === 'critical' ? 'CRITICAL' : tempSensor.status === 'warning' ? 'WARNING' : 'NORMAL'}: {tempSensor.value.toFixed(1)}°C
                 </div>
               </div>
-              {/* Mini sparkline chart */}
               <div className="flex justify-center mb-4">
                 <Sparkline data={tempSensor.history?.slice(-20)} color={tempSensor.status === 'critical' ? '#DC2626' : '#2D7A6F'} width={200} height={50} />
               </div>
@@ -453,11 +526,9 @@ function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Card 3: Air Quality / Emissions (like CO₂ Emission Tracking) */}
+        {/* Card 3: Air Quality */}
         <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
-          <p className="text-[10px] font-bold text-text-primary tracking-wider uppercase mb-2">
-            CO₂ & Air Quality
-          </p>
+          <p className="text-[10px] font-bold text-text-primary tracking-wider uppercase mb-2">CO₂ & Air Quality</p>
           {eco2Sensor && aqSensor && (
             <>
               <div className="flex items-baseline gap-1 mb-1">
@@ -466,8 +537,6 @@ function DashboardPage() {
                 </span>
               </div>
               <p className="text-[11px] text-text-tertiary mb-4">Air Quality Score</p>
-
-              {/* Hexagonal grid pattern */}
               <div className="flex flex-wrap gap-1 mb-3">
                 {Array.from({ length: 18 }).map((_, i) => {
                   const quality = i < Math.round(((500 - aqSensor.value) / 500) * 18);
@@ -479,7 +548,6 @@ function DashboardPage() {
                   );
                 })}
               </div>
-
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-[10px] font-mono bg-primary-lighter text-primary px-2 py-0.5 rounded font-semibold">
                   eCO₂: {eco2Sensor.value.toFixed(0)} ppm
@@ -488,67 +556,11 @@ function DashboardPage() {
                   IAQ: {aqSensor.value.toFixed(0)}
                 </span>
               </div>
-              <button className="text-[11px] text-text-secondary font-semibold underline underline-offset-2 hover:text-primary transition-colors">
-                VIEW REPORT
-              </button>
             </>
           )}
         </motion.div>
       </motion.div>
     </div>
-  );
-}
-
-/* ═══════════════════════ Sensors Page ═══════════════════════ */
-function SensorsPage() {
-  const activeDevice = useSensorStore((s) => s.devices.find((d) => d.id === s.activeDeviceId));
-  const sensors = useSensorStore((s) => s.deviceSensors[s.activeDeviceId] || {});
-
-  return (
-    <motion.div className="h-full p-6 overflow-auto bg-page-bg" initial="hidden" animate="visible" exit={{ opacity: 0 }} variants={stagger.container}>
-      <div className="max-w-[1200px] mx-auto">
-        <motion.div className="flex items-end justify-between mb-6" variants={stagger.item}>
-          <div>
-            <h2 className="font-display font-bold text-[28px] text-text-primary tracking-tight">All Sensors</h2>
-            <p className="text-[13px] text-text-tertiary mt-1">{activeDevice?.name} · {activeDevice?.location} · 12 active sensors</p>
-          </div>
-        </motion.div>
-
-        <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" variants={stagger.item}>
-          {[
-            { id: 'temperature', icon: Thermometer, color: '#2D7A6F' },
-            { id: 'humidity', icon: Droplets, color: '#0891B2' },
-            { id: 'co', icon: Skull, color: '#DC2626' },
-            { id: 'air-quality', icon: Activity, color: '#8B5CF6' },
-          ].map(({ id, icon: Icon, color }) => {
-            const sensor = sensors[id];
-            if (!sensor) return null;
-            return (
-              <motion.div key={id} className="glass rounded-2xl p-4" variants={stagger.item}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: color + '12', color }}><Icon size={15} /></div>
-                  <Sparkline data={sensor.history?.slice(-12)} color={color} width={50} height={20} />
-                </div>
-                <p className="text-[10px] text-text-tertiary mb-0.5">{sensor.label}</p>
-                <p className="font-display font-bold text-lg text-text-primary tracking-tight">
-                  {sensor.value.toFixed(1)}<span className="text-[10px] text-text-tertiary ml-1 font-normal">{sensor.unit}</span>
-                </p>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        <motion.div className="glass rounded-2xl p-5" variants={stagger.item}>
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display font-bold text-lg text-text-primary">Complete Sensor Array</h3>
-            <span className="text-xs text-text-tertiary">12 active sensors</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <SensorChipGrid />
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -559,6 +571,11 @@ export default function App() {
   const theme = useSensorStore((s) => s.theme);
   const sidebarCollapsed = useSensorStore((s) => s.sidebarCollapsed);
   useMQTTSimulator();
+
+  // Ensure theme class is synced on mount
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   const sidebarWidth = sidebarCollapsed ? 72 : 240;
   const isDashboard = activePage === 'dashboard';
@@ -575,10 +592,7 @@ export default function App() {
           {/* Main Content */}
           <div className="flex-1 h-full transition-all duration-300 relative" style={{ marginLeft: sidebarWidth }}>
             <AnimatePresence mode="wait">
-              {/* Dashboard = FULL 3D + floating HUD (no scroll, no header) */}
               {isDashboard && <DashboardPage key="dashboard" />}
-
-              {/* Other pages = traditional scrollable layout */}
               {activePage === 'sensors' && <SensorsPage key="sensors" />}
               {activePage === 'analytics' && <AnalyticsPage key="analytics" />}
               {activePage === 'alerts' && <AlertsPage key="alerts" />}
