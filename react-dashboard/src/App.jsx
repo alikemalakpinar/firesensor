@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DigitalTwin } from './components/3d/DigitalTwin';
 import { Sidebar, MiniStatusBar } from './components/hud/Sidebar';
 import { Vignette, AlertBanner } from './components/hud/Vignette';
-import { TachometerGauge, SystemHealthGauge } from './components/hud/TachometerGauge';
-import { SensorChip, SensorChipGrid } from './components/hud/SensorChip';
-import GlassPanel, { GlassCard } from './components/ui/GlassPanel';
+import { SensorChipGrid } from './components/hud/SensorChip';
+import GlassPanel from './components/ui/GlassPanel';
 
 import { useMQTTSimulator } from './hooks/useMQTT';
 import { useSensorStore, SENSOR_CONFIG } from './stores/useSensorStore';
@@ -16,19 +15,26 @@ import AlertsPage from './pages/AlertsPage';
 import SettingsPage from './pages/SettingsPage';
 
 import {
-  Activity, Shield, AlertCircle, CheckCircle, Flame, Zap,
-  Thermometer, Wind, Search, MapPin, ChevronRight, ArrowUpRight,
-  Droplets, TrendingUp, TrendingDown, Clock, Eye, Building2,
-  Cpu, BarChart3, Bell, ChevronDown, Minus, Gauge, Leaf,
-  Cloud, Skull, AlertTriangle, Radio,
+  Activity, Shield, Flame, Zap, Thermometer, Wind, MapPin,
+  ChevronRight, ChevronDown, ArrowUpRight, Droplets, Clock,
+  Building2, Skull, AlertTriangle, Gauge, Leaf, Cloud,
+  Maximize2, Code2, Eye, TrendingUp,
 } from 'lucide-react';
 
 import './index.css';
 
 /* ═══════════════════════ Animations ═══════════════════════ */
 const stagger = {
-  container: { hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } },
-  item: { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } } },
+  container: { hidden: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.15 } } },
+  item: { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] } } },
+  slideLeft: { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } } },
+  slideRight: { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } } },
+};
+
+const ICON_MAP = {
+  temperature: Thermometer, humidity: Droplets, gas: Wind, 'air-quality': Activity,
+  no2: AlertTriangle, co: Skull, tvoc: Cloud, eco2: Leaf, 'surface-temp': Flame,
+  'surface-temp-2': Flame, pressure: Gauge, current: Zap,
 };
 
 /* ═══════════════════════ Boot Sequence ═══════════════════════ */
@@ -36,25 +42,27 @@ function BootSequence({ onComplete }) {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
-      setProgress((p) => { if (p >= 100) { clearInterval(interval); setTimeout(onComplete, 300); return 100; } return p + 4; });
-    }, 35);
+      setProgress((p) => { if (p >= 100) { clearInterval(interval); setTimeout(onComplete, 300); return 100; } return p + 5; });
+    }, 30);
     return () => clearInterval(interval);
   }, [onComplete]);
 
   return (
-    <motion.div className="fixed inset-0 z-[200] bg-page-bg flex items-center justify-center" exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-      <div className="text-center max-w-sm px-8">
-        <motion.div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-text-primary flex items-center justify-center"
-          initial={{ scale: 0.8, opacity: 0, rotate: -10 }} animate={{ scale: 1, opacity: 1, rotate: 0 }}
+    <motion.div className="fixed inset-0 z-boot bg-page-bg flex items-center justify-center" exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
+      <div className="text-center max-w-xs">
+        <motion.div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-primary flex items-center justify-center"
+          initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 12, delay: 0.1 }}>
-          <Flame className="text-white" size={28} />
+          <Flame className="text-white" size={24} />
         </motion.div>
-        <motion.h1 className="font-display font-bold text-3xl text-text-primary tracking-tight mb-1"
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>FIRELINK</motion.h1>
-        <motion.p className="text-text-tertiary text-sm mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+        <motion.h1 className="font-display font-bold text-2xl text-text-primary tracking-tight mb-0.5"
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          FIRELINK
+        </motion.h1>
+        <motion.p className="text-text-tertiary text-xs mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
           Detection System v2.0
         </motion.p>
-        <div className="relative h-1 bg-border rounded-full overflow-hidden">
+        <div className="relative h-[3px] bg-border rounded-full overflow-hidden mx-8">
           <motion.div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${progress}%` }} />
         </div>
       </div>
@@ -62,403 +70,111 @@ function BootSequence({ onComplete }) {
   );
 }
 
-/* ═══════════════════════ Top Header ═══════════════════════ */
-function TopHeader() {
-  const activePage = useSensorStore((s) => s.activePage);
-  const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
+/* ═══════════════════════ Floating Top Bar ═══════════════════════ */
+function FloatingTopBar() {
   const devices = useSensorStore((s) => s.devices);
+  const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
+  const setActiveDevice = useSensorStore((s) => s.setActiveDevice);
+  const activeDevice = devices.find((d) => d.id === activeDeviceId);
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(t); }, []);
-  const activeDevice = devices.find((d) => d.id === activeDeviceId);
-  const pageNames = { dashboard: 'Overview', sensors: 'Sensors', analytics: 'Analytics', alerts: 'Alerts', settings: 'Settings' };
 
   return (
-    <div className="flex items-center justify-between px-7 py-3 border-b border-border bg-card-bg/60 backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-[13px]">
-        <span className="text-text-tertiary font-medium">FIRELINK</span>
-        <ChevronRight size={12} className="text-text-tertiary/50" />
-        <span className="text-text-tertiary">{activeDevice?.name || 'Device'}</span>
-        <ChevronRight size={12} className="text-text-tertiary/50" />
-        <span className="text-text-primary font-semibold">{pageNames[activePage]}</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5 px-4 py-2 bg-surface border border-border rounded-xl text-[13px] text-text-tertiary w-60 cursor-pointer hover:border-primary/30 transition-colors">
-          <Search size={15} className="text-text-tertiary/70" />
-          <span>Search by sensor or name</span>
+    <motion.div
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-nav glass-strong rounded-2xl px-1 py-1 flex items-center gap-1"
+      initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+          <Flame className="text-white" size={14} />
         </div>
+        <span className="font-display font-bold text-sm text-text-primary tracking-tight">FIRELINK</span>
+      </div>
+
+      {/* Device Tabs */}
+      <div className="flex items-center gap-0.5 px-1">
+        <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface transition-colors">
+          <ChevronRight size={14} className="rotate-180" />
+        </button>
+        {devices.map((device) => {
+          const isActive = device.id === activeDeviceId;
+          const hasCritical = device.status === 'critical';
+          return (
+            <button
+              key={device.id}
+              className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
+                isActive
+                  ? 'bg-page-bg text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+              }`}
+              onClick={() => setActiveDevice(device.id)}
+            >
+              {hasCritical && <AlertTriangle size={11} className="text-danger" />}
+              {device.name}
+            </button>
+          );
+        })}
+        <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface transition-colors">
+          <ChevronRight size={14} />
+        </button>
+      </div>
+
+      {/* Right side */}
+      <div className="flex items-center gap-2 px-3 border-l border-border ml-1">
         <MiniStatusBar />
-        <div className="flex items-center gap-2 px-3 py-2 bg-surface border border-border rounded-xl">
-          <Clock size={13} className="text-text-tertiary" />
-          <span className="text-[13px] font-medium text-text-primary tabular-nums">
-            {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-          </span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface text-xs text-text-secondary font-mono tabular-nums">
+          <Clock size={11} />
+          {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════ SVG Sparkline ═══════════════════════ */
-function Sparkline({ data, color = '#2D7A6F', width = 120, height = 40, filled = true }) {
-  if (!data || data.length < 2) return <div style={{ width, height }} />;
-  const min = Math.min(...data); const max = Math.max(...data); const range = max - min || 1;
-  const pad = 2; const xStep = (width - pad * 2) / (data.length - 1);
-  const pts = data.map((v, i) => `${pad + i * xStep},${height - pad - ((v - min) / range) * (height - pad * 2)}`).join(' ');
-  const uid = `sp-${color.replace('#', '')}-${data.length}`;
-
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      {filled && (
-        <>
-          <defs><linearGradient id={uid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.12" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
-          <polygon points={`${pad},${height - pad} ${pts} ${width - pad},${height - pad}`} fill={`url(#${uid})`} />
-        </>
-      )}
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={width - pad} cy={height - pad - ((data[data.length - 1] - min) / range) * (height - pad * 2)} r="2.5" fill={color} />
-    </svg>
-  );
-}
-
-/* ═══════════════════════ Bar Chart ═══════════════════════ */
-function BarChart({ data, labels, color = '#2D7A6F', height = 160, highlightIndex = null }) {
-  if (!data || data.length === 0) return null;
-  const max = Math.max(...data, 1);
-  return (
-    <div className="flex items-end gap-[6px]" style={{ height }}>
-      {data.map((value, i) => {
-        const barH = (value / max) * 100;
-        const hl = i === highlightIndex;
-        return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-full relative flex items-end" style={{ height: height - 24 }}>
-              {hl && (
-                <motion.div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap shadow-sm"
-                  style={{ backgroundColor: color, color: '#fff' }}
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
-                  {value.toFixed(1)}
-                </motion.div>
-              )}
-              <motion.div className="w-full rounded-md" style={{ backgroundColor: hl ? color : color + '25' }}
-                initial={{ height: 0 }} animate={{ height: `${barH}%` }}
-                transition={{ duration: 0.7, delay: i * 0.04, ease: [0.34, 1.56, 0.64, 1] }} />
-            </div>
-            {labels?.[i] && <span className={`text-[10px] ${hl ? 'font-bold text-text-primary' : 'text-text-tertiary'}`}>{labels[i]}</span>}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ═══════════════════════ Wave Chart (Quality style) ═══════════════════════ */
-function WaveChart({ data, color = '#2D7A6F', height = 100 }) {
-  if (!data || data.length < 3) return <div style={{ height }} className="flex items-center justify-center text-text-tertiary text-xs">Collecting...</div>;
-  const w = 260; const h = height; const pad = 8;
-  const min = Math.min(...data); const max = Math.max(...data); const range = max - min || 1;
-  const xStep = (w - pad * 2) / (data.length - 1);
-  const pts = data.map((v, i) => ({ x: pad + i * xStep, y: h - pad - ((v - min) / range) * (h - pad * 2) }));
-
-  let path = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const cx = (pts[i].x + pts[i + 1].x) / 2;
-    path += ` C ${cx} ${pts[i].y}, ${cx} ${pts[i + 1].y}, ${pts[i + 1].x} ${pts[i + 1].y}`;
-  }
-
-  const uid = `wv-${color.replace('#', '')}`;
-  const areaPath = `${path} L ${pts[pts.length - 1].x} ${h - pad} L ${pts[0].x} ${h - pad} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.08" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0.25, 0.5, 0.75].map((y) => (
-        <line key={y} x1={pad} y1={h * y} x2={w - pad} y2={h * y} stroke="#E5E5E3" strokeWidth="0.5" strokeDasharray="3,3" />
-      ))}
-      <path d={areaPath} fill={`url(#${uid})`} />
-      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill="white" stroke={color} strokeWidth="2" />
-      <text x={pts[pts.length - 1].x} y={pts[pts.length - 1].y - 10}
-        textAnchor="middle" fill={color} fontSize="10" fontWeight="700">
-        {data[data.length - 1].toFixed(1)}
-      </text>
-    </svg>
-  );
-}
-
-/* ═══════════════════════ Dashboard Page ═══════════════════════ */
-function DashboardPage() {
-  const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
-  const devices = useSensorStore((s) => s.devices);
-  const sensors = useSensorStore((s) => s.deviceSensors[s.activeDeviceId] || {});
-  const systemStatus = useSensorStore((s) => s.systemStatus);
-  const panelHealth = useSensorStore((s) => s.panelHealth);
-  const activeDevice = devices.find((d) => d.id === activeDeviceId);
-
-  const tempSensor = sensors.temperature;
-  const coSensor = sensors.co;
-  const humiditySensor = sensors.humidity;
-  const aqSensor = sensors['air-quality'];
-
-  const barData = useMemo(() => {
-    if (!tempSensor?.history || tempSensor.history.length < 2) return { data: [], labels: [] };
-    const h = tempSensor.history.slice(-7);
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return { data: h, labels: days.slice(0, h.length) };
-  }, [tempSensor?.history]);
-
-  const criticalCount = Object.values(sensors).filter((s) => s.status === 'critical').length;
-  const normalCount = Object.values(sensors).filter((s) => s.status === 'normal').length;
-
-  return (
-    <motion.div className="h-full p-6 overflow-auto" initial="hidden" animate="visible" exit={{ opacity: 0 }} variants={stagger.container}>
-      <div className="max-w-[1440px] mx-auto space-y-5">
-
-        {/* ─── Device Header ─── */}
-        <motion.div className="flex items-end justify-between" variants={stagger.item}>
-          <div>
-            <h1 className="font-display font-bold text-[32px] text-text-primary tracking-tight leading-none">{activeDevice?.name || 'Dashboard'}</h1>
-            <div className="flex items-center gap-2.5 mt-2">
-              <MapPin size={13} className="text-text-tertiary" />
-              <span className="text-[13px] text-text-secondary">{activeDevice?.location}</span>
-              <span className="w-1 h-1 rounded-full bg-border" />
-              <span className="text-[13px] text-text-secondary">{activeDevice?.sensorCount} sensors</span>
-              <span className="w-1 h-1 rounded-full bg-border" />
-              <span className="text-[13px] text-text-secondary">{activeDevice?.floors} floor{activeDevice?.floors !== 1 ? 's' : ''}</span>
-            </div>
-          </div>
-          <motion.div className="flex items-center gap-2" variants={stagger.item}>
-            <span className="px-3 py-1.5 rounded-full bg-primary-lighter text-primary text-xs font-semibold flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" /></span>
-              Live
-            </span>
-          </motion.div>
-        </motion.div>
-
-        {/* ═══════════ ROW 1: Hero + Timeline ═══════════ */}
-        <div className="grid grid-cols-12 gap-5">
-
-          {/* ── Hero: Temperature Chart + 3D ── */}
-          <motion.div className="col-span-8" variants={stagger.item}>
-            <div className="bg-card-bg border border-border rounded-[20px] overflow-hidden shadow-sm">
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[14px] bg-primary-lighter flex items-center justify-center text-primary">
-                    <Thermometer size={20} />
-                  </div>
-                  <h2 className="font-display font-bold text-[28px] text-text-primary tracking-tight">Temperature</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1.5 rounded-full bg-surface border border-border text-xs text-text-secondary font-medium flex items-center gap-1.5">
-                    this week <ChevronDown size={12} />
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-5 gap-0">
-                {/* Bar chart */}
-                <div className="col-span-3 px-6 pb-5 pt-2">
-                  {/* Dropdown */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="px-3 py-1.5 rounded-xl bg-surface border border-border text-xs text-text-secondary flex items-center gap-1.5">
-                      Sensor: Temperature <ChevronDown size={11} />
-                    </span>
-                  </div>
-                  <BarChart data={barData.data} labels={barData.labels} color="#2D7A6F" height={170} highlightIndex={barData.data.length > 3 ? 3 : barData.data.length - 1} />
-                  {tempSensor && (
-                    <div className="flex items-baseline gap-2.5 mt-5">
-                      <span className="font-display font-bold text-[28px] text-text-primary tracking-tight">
-                        {tempSensor.value > 0 ? '+' : ''}{tempSensor.value.toFixed(1)}°C
-                      </span>
-                      <span className="text-[13px] text-text-tertiary">current reading</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3D Digital Twin */}
-                <div className="col-span-2 relative">
-                  <div className="h-[320px] -mr-2">
-                    <DigitalTwin />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── Right: Alert Timeline ── */}
-          <motion.div className="col-span-4" variants={stagger.item}>
-            <div className="bg-card-bg border border-border rounded-[20px] p-5 shadow-sm h-full flex flex-col">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="font-display font-bold text-lg text-text-primary">Sensor Activity</h3>
-                <span className="text-xs text-primary font-semibold cursor-pointer hover:underline flex items-center gap-1">View All <ArrowUpRight size={11} /></span>
-              </div>
-              <SensorTimeline sensors={sensors} />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* ═══════════ ROW 2: Device Status + Quality + Health ═══════════ */}
-        <div className="grid grid-cols-12 gap-5">
-
-          {/* ── Device Status (like Worker Capacity) ── */}
-          <motion.div className="col-span-4" variants={stagger.item}>
-            <div className="bg-card-bg border border-border rounded-[20px] p-5 shadow-sm h-full">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="font-display font-bold text-lg text-text-primary">Device Status</h3>
-                <span className="text-xs text-primary font-semibold cursor-pointer hover:underline flex items-center gap-1">View All <ArrowUpRight size={11} /></span>
-              </div>
-              <div className="space-y-4">
-                {devices.map((device) => (
-                  <DeviceRow key={device.id} device={device} isActive={device.id === activeDeviceId} />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── Air Quality (like Quality card) ── */}
-          <motion.div className="col-span-4" variants={stagger.item}>
-            <div className="bg-card-bg border border-border rounded-[20px] p-5 shadow-sm h-full">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2.5">
-                  <h3 className="font-display font-bold text-lg text-text-primary">Air Quality</h3>
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${
-                    aqSensor?.status === 'critical' ? 'bg-danger-light text-danger'
-                    : aqSensor?.value < 100 ? 'bg-success-light text-success'
-                    : 'bg-warning-light text-warning'
-                  }`}>
-                    {aqSensor?.status === 'critical' ? 'POOR' : aqSensor?.value < 100 ? 'GOOD' : 'MODERATE'}
-                  </span>
-                </div>
-                <span className="px-2.5 py-1 rounded-lg bg-surface border border-border text-[11px] text-text-secondary flex items-center gap-1">IAQ Index <ChevronDown size={10} /></span>
-              </div>
-              <p className="text-xs text-text-tertiary mb-4">Air quality index, IAQ</p>
-              <WaveChart data={aqSensor?.history?.slice(-20)} color="#8B5CF6" height={120} />
-            </div>
-          </motion.div>
-
-          {/* ── System Health (orange gradient like Total Revenue) ── */}
-          <motion.div className="col-span-4" variants={stagger.item}>
-            <div className="bg-gradient-to-br from-accent-bg to-orange-400 rounded-[20px] p-5 shadow-sm h-full text-white relative overflow-hidden">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="absolute rounded-full bg-white" style={{
-                    width: 2, height: Math.random() * 40 + 20, left: `${12 + i * 12}%`,
-                    bottom: `${Math.random() * 60}%`, opacity: 0.3 + Math.random() * 0.4,
-                  }} />
-                ))}
-              </div>
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2.5">
-                    <Shield size={18} className="text-white/80" />
-                    <h3 className="font-display font-bold text-lg">System Health</h3>
-                  </div>
-                </div>
-                <p className="text-white/60 text-xs mb-5">Overall system performance</p>
-
-                {/* Mini bar chart */}
-                <div className="flex items-end gap-1 h-16 mb-4">
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    const sensorArr = Object.values(sensors);
-                    const s = sensorArr[i];
-                    const isOk = s?.status === 'normal';
-                    return (
-                      <motion.div key={i} className="flex-1 rounded-sm" style={{ backgroundColor: isOk ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)' }}
-                        initial={{ height: 0 }} animate={{ height: `${40 + Math.random() * 60}%` }}
-                        transition={{ duration: 0.5, delay: i * 0.03 }} />
-                    );
-                  })}
-                </div>
-
-                {/* Health Score badge */}
-                <div className="absolute top-5 right-5">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-1.5">
-                    <span className="font-display font-bold text-sm">{panelHealth.toFixed(0)}%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-2.5">
-                  <span className="font-display font-bold text-[40px] tracking-tight leading-none">{normalCount}/{Object.keys(sensors).length}</span>
-                  <span className="text-white/60 text-[13px]">sensors normal</span>
-                </div>
-                {criticalCount > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className="bg-white/20 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md">{criticalCount} critical</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* ═══════════ ROW 3: Key Sensor Cards ═══════════ */}
-        <motion.div className="grid grid-cols-4 gap-5" variants={stagger.item}>
-          <MetricCard sensorId="co" icon={Skull} accentColor="#DC2626" sensors={sensors} />
-          <MetricCard sensorId="humidity" icon={Droplets} accentColor="#0891B2" sensors={sensors} />
-          <MetricCard sensorId="eco2" icon={Leaf} accentColor="#16A34A" sensors={sensors} />
-          <MetricCard sensorId="tvoc" icon={Cloud} accentColor="#6366F1" sensors={sensors} />
-        </motion.div>
       </div>
     </motion.div>
   );
 }
 
-/* ═══════════════════════ Sensor Timeline ═══════════════════════ */
-function SensorTimeline({ sensors }) {
-  const sensorArr = Object.values(sensors).filter((s) => s.lastUpdate);
-  const sorted = [...sensorArr].sort((a, b) => (b.lastUpdate || 0) - (a.lastUpdate || 0)).slice(0, 6);
-  const now = Date.now();
-
-  const ICON_MAP = { temperature: Thermometer, humidity: Droplets, gas: Wind, 'air-quality': Activity,
-    no2: AlertTriangle, co: Skull, tvoc: Cloud, eco2: Leaf, 'surface-temp': Flame, 'surface-temp-2': Flame,
-    pressure: Gauge, current: Zap };
-
+/* ═══════════════════════ Sparkline (compact) ═══════════════════════ */
+function Sparkline({ data, color = '#2D7A6F', width = 80, height = 28, filled = true }) {
+  if (!data || data.length < 2) return <div style={{ width, height }} />;
+  const min = Math.min(...data); const max = Math.max(...data); const range = max - min || 1;
+  const pad = 2; const xStep = (width - pad * 2) / (data.length - 1);
+  const pts = data.map((v, i) => `${pad + i * xStep},${height - pad - ((v - min) / range) * (height - pad * 2)}`).join(' ');
+  const uid = `sp-${color.replace('#', '')}-${data.length}`;
   return (
-    <div className="flex-1 overflow-hidden relative">
-      {/* Timeline line */}
-      <div className="absolute left-[7px] top-0 bottom-0 w-px bg-border" />
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      {filled && (
+        <>
+          <defs><linearGradient id={uid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.15" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
+          <polygon points={`${pad},${height - pad} ${pts} ${width - pad},${height - pad}`} fill={`url(#${uid})`} />
+        </>
+      )}
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={width - pad} cy={height - pad - ((data[data.length - 1] - min) / range) * (height - pad * 2)} r="2" fill={color} />
+    </svg>
+  );
+}
 
-      <div className="space-y-0">
-        {sorted.map((sensor, i) => {
-          const elapsed = Math.round((now - sensor.lastUpdate) / 1000);
-          const timeStr = elapsed < 5 ? 'just now' : `${elapsed}s ago`;
-          const Icon = ICON_MAP[sensor.id] || Activity;
-          const isCritical = sensor.status === 'critical';
-
+/* ═══════════════════════ Gauge Bar (like reference Temp & Pressure) ═══════════════════════ */
+function GaugeBar({ value, min, max, color = '#2D7A6F', label, unit }) {
+  const pct = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+  const segments = 8;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-text-secondary font-medium">{label}</span>
+        <span className="text-sm font-display font-bold text-text-primary tabular-nums">{value.toFixed(1)} <span className="text-[10px] text-text-tertiary font-normal">{unit}</span></span>
+      </div>
+      <div className="flex gap-[3px]">
+        {Array.from({ length: segments }).map((_, i) => {
+          const filled = i < Math.round(pct / 100 * segments);
           return (
-            <motion.div key={sensor.id} className="relative pl-7 py-2.5 group" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
-              {/* Dot */}
-              <div className={`absolute left-0 top-3.5 w-[15px] h-[15px] rounded-full border-2 ${
-                isCritical ? 'bg-danger border-danger/30' : 'bg-card-bg border-border group-hover:border-primary'
-              } z-10 transition-colors`}>
-                {isCritical && <motion.div className="absolute inset-0 rounded-full bg-danger" animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }} />}
-              </div>
-
-              <div className={`p-3 rounded-xl border transition-all ${
-                isCritical ? 'bg-danger-light/50 border-danger/20' : 'bg-surface/50 border-transparent hover:bg-surface hover:border-border'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Icon size={14} className={isCritical ? 'text-danger' : 'text-text-secondary'} />
-                    <span className="text-[13px] font-medium text-text-primary">{sensor.label}</span>
-                  </div>
-                  <span className="text-[11px] text-text-tertiary tabular-nums">{timeStr}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className={`font-display font-bold text-[15px] ${isCritical ? 'text-danger' : 'text-text-primary'}`}>
-                    {sensor.value.toFixed(1)} {sensor.unit}
-                  </span>
-                  {isCritical && <span className="text-[10px] font-bold text-danger bg-danger-light px-1.5 py-0.5 rounded">ALERT</span>}
-                </div>
-              </div>
-            </motion.div>
+            <motion.div
+              key={i}
+              className="flex-1 h-[6px] rounded-sm"
+              style={{ backgroundColor: filled ? color : 'var(--border-color)' }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: i * 0.03, duration: 0.2 }}
+            />
           );
         })}
       </div>
@@ -466,72 +182,320 @@ function SensorTimeline({ sensors }) {
   );
 }
 
-/* ═══════════════════════ Device Row ═══════════════════════ */
-function DeviceRow({ device, isActive }) {
-  const setActiveDevice = useSensorStore((s) => s.setActiveDevice);
-  const statusColor = device.status === 'critical' ? '#DC2626' : device.status === 'warning' ? '#D97706' : '#16A34A';
-  const healthPct = device.status === 'critical' ? 45 : device.status === 'warning' ? 72 : 85 + Math.random() * 10;
-
+/* ═══════════════════════ Status Toggle Row ═══════════════════════ */
+function StatusRow({ label, active, color = '#16A34A' }) {
   return (
-    <button className={`w-full text-left group`} onClick={() => setActiveDevice(device.id)}>
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: device.color + '15', color: device.color }}>
-          <Building2 size={15} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-[13px] font-medium ${isActive ? 'text-primary' : 'text-text-primary'}`}>{device.name}</span>
-            <span className="text-[11px] text-text-tertiary">·</span>
-            <span className="text-[11px] text-text-tertiary">{device.location}</span>
-          </div>
-        </div>
-        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: statusColor + '15', color: statusColor }}>
-          {healthPct.toFixed(0)}%
-        </span>
+    <div className="flex items-center justify-between py-2">
+      <span className={`text-xs font-medium ${active ? 'text-text-primary' : 'text-text-tertiary'}`}>{label}</span>
+      <div className={`w-8 h-4.5 rounded-full relative transition-colors ${active ? '' : 'bg-border'}`}
+        style={active ? { backgroundColor: color } : {}}>
+        <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all ${active ? 'left-[15px]' : 'left-0.5'}`} />
       </div>
-      {/* Progress dots */}
-      <div className="flex items-center gap-[3px] pl-11">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="w-[6px] h-[6px] rounded-full" style={{ backgroundColor: i < Math.round(healthPct / 100 * 12) ? device.color : '#E5E5E3' }} />
-        ))}
-      </div>
-    </button>
+    </div>
   );
 }
 
-/* ═══════════════════════ Metric Card ═══════════════════════ */
-function MetricCard({ sensorId, icon: Icon, accentColor, sensors }) {
-  const sensor = sensors?.[sensorId];
-  if (!sensor) return null;
-  const change = sensor.history.length >= 2 ? ((sensor.value - sensor.history[sensor.history.length - 2]) / (sensor.history[sensor.history.length - 2] || 1) * 100) : 0;
+/* ═══════════════════════ Accordion Section ═══════════════════════ */
+function AccordionItem({ label, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-t border-border">
+      <button className="w-full flex items-center justify-between py-3 px-1 text-left" onClick={() => setOpen(!open)}>
+        <span className="text-xs font-bold text-text-primary tracking-wide uppercase">{label}</span>
+        <ChevronDown size={14} className={`text-text-tertiary transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }} className="overflow-hidden pb-3">
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════ Dashboard HUD (Floating Layout) ═══════════════════════ */
+function DashboardPage() {
+  const sensors = useSensorStore((s) => s.deviceSensors[s.activeDeviceId] || {});
+  const devices = useSensorStore((s) => s.devices);
+  const activeDeviceId = useSensorStore((s) => s.activeDeviceId);
+  const panelHealth = useSensorStore((s) => s.panelHealth);
+  const activeDevice = devices.find((d) => d.id === activeDeviceId);
+
+  const tempSensor = sensors.temperature;
+  const pressureSensor = sensors.pressure;
+  const humiditySensor = sensors.humidity;
+  const coSensor = sensors.co;
+  const aqSensor = sensors['air-quality'];
+  const eco2Sensor = sensors.eco2;
+  const gasSensor = sensors.gas;
+  const currentSensor = sensors.current;
+
+  const criticalCount = Object.values(sensors).filter((s) => s.status === 'critical').length;
+  const normalCount = Object.values(sensors).filter((s) => s.status === 'normal').length;
+  const sensorCount = Object.keys(sensors).length;
 
   return (
-    <motion.div className="bg-card-bg border border-border rounded-[20px] p-5 shadow-sm hover:shadow-md transition-all group" variants={stagger.item}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: accentColor + '12', color: accentColor }}>
-            <Icon size={17} />
-          </div>
-          <div>
-            <p className="text-[13px] font-medium text-text-primary">{sensor.label}</p>
-            <p className="text-[10px] text-text-tertiary">{sensor.status === 'critical' ? 'CRITICAL' : 'Live'}</p>
-          </div>
-        </div>
-        <Sparkline data={sensor.history.slice(-15)} color={accentColor} width={64} height={28} />
+    <div className="absolute inset-0">
+      {/* ═══ FULL SCREEN 3D BACKGROUND ═══ */}
+      <div className="absolute inset-0 z-3d">
+        <DigitalTwin />
       </div>
-      <div className="flex items-baseline gap-2">
-        <motion.span className="font-display font-bold text-[28px] tracking-tight" style={{ color: sensor.status === 'critical' ? '#DC2626' : '#1A1A1A' }}
-          key={Math.round(sensor.value * 10)} initial={{ y: -3, opacity: 0.6 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.12 }}>
-          {sensor.value.toFixed(1)}
-        </motion.span>
-        <span className="text-[13px] text-text-tertiary">{sensor.unit}</span>
-        {change !== 0 && (
-          <span className={`text-[11px] font-semibold ml-auto px-2 py-0.5 rounded-full ${change > 0 ? 'text-accent bg-accent-light' : 'text-primary bg-primary-lighter'}`}>
-            {change > 0 ? '+' : ''}{change.toFixed(1)}%
-          </span>
-        )}
-      </div>
-    </motion.div>
+
+      {/* ═══ FLOATING TOP BAR ═══ */}
+      <FloatingTopBar />
+
+      {/* ═══ HIGH TEMP ALERT (floating label on 3D) ═══ */}
+      {criticalCount > 0 && (
+        <motion.div className="absolute top-20 left-1/2 -translate-x-1/2 z-hud"
+          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+          <div className="glass-strong rounded-xl px-4 py-2 flex items-center gap-2 border border-danger/20">
+            <AlertTriangle size={13} className="text-danger" />
+            <span className="text-xs font-semibold text-danger">High temperature</span>
+            <Thermometer size={12} className="text-danger/60" />
+          </div>
+        </motion.div>
+      )}
+
+      {/* ═══ LEFT PANEL COLUMN ═══ */}
+      <motion.div
+        className="absolute left-5 top-20 bottom-[220px] w-[260px] z-hud flex flex-col gap-3 overflow-hidden"
+        initial="hidden" animate="visible" variants={stagger.container}
+      >
+        {/* Building Data Panel */}
+        <motion.div className="glass rounded-2xl p-4" variants={stagger.slideLeft}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Building Data</span>
+            <ChevronDown size={14} className="text-text-tertiary" />
+          </div>
+          <div className="space-y-0">
+            {[
+              { label: 'Building:', value: activeDevice?.name || 'Main' },
+              { label: 'Area:', value: `${activeDevice?.floors || 1} floors` },
+              { label: 'Class:', value: criticalCount > 0 ? 'B' : 'A+' },
+              { label: 'Sensors:', value: `${sensorCount}` },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <span className="text-[11px] text-text-secondary">{row.label}</span>
+                <span className="text-[11px] font-semibold text-text-primary bg-surface px-2.5 py-1 rounded-lg">{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Status Panel */}
+        <motion.div className="glass rounded-2xl p-4 flex-1 overflow-auto" variants={stagger.slideLeft}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Status</span>
+            <ChevronDown size={14} className="text-text-tertiary" />
+          </div>
+          <div className="space-y-0.5">
+            <StatusRow label="Fire Detection" active={true} color="#16A34A" />
+            <StatusRow label="Gas Monitor" active={gasSensor?.status !== 'critical'} color={gasSensor?.status === 'critical' ? '#DC2626' : '#16A34A'} />
+            <StatusRow label="Power Supply" active={true} color="#16A34A" />
+            <StatusRow label="HVAC System" active={humiditySensor?.status !== 'critical'} color="#16A34A" />
+            <StatusRow label="Air Filtration" active={aqSensor?.status !== 'critical'} color={aqSensor?.status === 'critical' ? '#DC2626' : '#16A34A'} />
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* ═══ RIGHT PANEL COLUMN ═══ */}
+      <motion.div
+        className="absolute right-5 top-20 bottom-[220px] w-[260px] z-hud flex flex-col gap-3 overflow-hidden"
+        initial="hidden" animate="visible" variants={stagger.container}
+      >
+        {/* Preset Buttons */}
+        <motion.div className="flex items-center gap-2" variants={stagger.slideRight}>
+          <button className="flex-1 glass rounded-xl px-3 py-2 text-xs font-semibold text-text-primary text-center hover:bg-card-hover transition-colors">A-PRESET</button>
+          <button className="flex-1 glass-subtle rounded-xl px-3 py-2 text-xs font-medium text-text-secondary text-center hover:bg-card-hover transition-colors">B-PRESET</button>
+          <button className="w-9 h-9 glass-subtle rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">+</button>
+        </motion.div>
+
+        {/* Temp & Pressure Panel */}
+        <motion.div className="glass rounded-2xl p-4" variants={stagger.slideRight}>
+          <AccordionItem label="Temp & Pressure" defaultOpen={true}>
+            <div className="space-y-4">
+              {tempSensor && (
+                <GaugeBar value={tempSensor.value} min={0} max={80} color="#2D7A6F" label="Temperature (°C)" unit="°C" />
+              )}
+              {pressureSensor && (
+                <GaugeBar value={pressureSensor.value} min={900} max={1100} color="#6366F1" label="Pressure (Pa)" unit="Pa" />
+              )}
+              {currentSensor && (
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-text-secondary">Output</span>
+                  <span className="text-sm font-bold text-accent flex items-center gap-1">
+                    {currentSensor.value.toFixed(1)} {currentSensor.unit} <Zap size={12} />
+                  </span>
+                </div>
+              )}
+            </div>
+          </AccordionItem>
+        </motion.div>
+
+        {/* Extra accordion sections */}
+        <motion.div className="glass rounded-2xl px-4 py-1 flex-1 overflow-auto" variants={stagger.slideRight}>
+          <AccordionItem label="Air Quality">
+            <div className="space-y-3">
+              {aqSensor && <GaugeBar value={aqSensor.value} min={0} max={500} color="#8B5CF6" label="IAQ Index" unit="" />}
+              {eco2Sensor && <GaugeBar value={eco2Sensor.value} min={400} max={5000} color="#16A34A" label="eCO₂" unit="ppm" />}
+            </div>
+          </AccordionItem>
+          <AccordionItem label="Gas Levels">
+            <div className="space-y-3">
+              {coSensor && <GaugeBar value={coSensor.value} min={0} max={100} color="#DC2626" label="CO" unit="ppm" />}
+              {gasSensor && <GaugeBar value={gasSensor.value} min={0} max={1000} color="#D97706" label="Gas" unit="ppm" />}
+            </div>
+          </AccordionItem>
+          <AccordionItem label="Humidity">
+            {humiditySensor && (
+              <div className="space-y-3">
+                <GaugeBar value={humiditySensor.value} min={0} max={100} color="#0891B2" label="Relative (%)" unit="%" />
+              </div>
+            )}
+          </AccordionItem>
+        </motion.div>
+      </motion.div>
+
+      {/* ═══ BOTTOM-LEFT CORNER UTILS ═══ */}
+      <motion.div className="absolute left-5 bottom-[226px] z-hud flex items-center gap-2"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+        <button className="w-9 h-9 glass rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">
+          <Code2 size={16} />
+        </button>
+        <button className="w-9 h-9 glass rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">
+          <Maximize2 size={16} />
+        </button>
+      </motion.div>
+
+      {/* ═══ BOTTOM-RIGHT CORNER UTILS ═══ */}
+      <motion.div className="absolute right-5 bottom-[226px] z-hud"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+        <button className="w-9 h-9 glass rounded-xl flex items-center justify-center text-text-tertiary hover:text-primary transition-colors">
+          <Eye size={16} />
+        </button>
+      </motion.div>
+
+      {/* ═══ BOTTOM ROW: 3 DATA CARDS ═══ */}
+      <motion.div
+        className="absolute left-5 right-5 bottom-4 z-hud grid grid-cols-3 gap-3"
+        initial="hidden" animate="visible" variants={stagger.container}
+      >
+        {/* Card 1: System Health (like Energy Generating) */}
+        <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
+          <p className="text-[10px] font-bold text-primary tracking-wider uppercase mb-4">System Health</p>
+          {/* Dotted ring gauge */}
+          <div className="flex items-center justify-center mb-3">
+            <div className="relative">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                {Array.from({ length: 24 }).map((_, i) => {
+                  const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
+                  const r = 48;
+                  const filled = i < Math.round(panelHealth / 100 * 24);
+                  return (
+                    <circle key={i}
+                      cx={60 + Math.cos(angle) * r} cy={60 + Math.sin(angle) * r}
+                      r={filled ? 4.5 : 3.5}
+                      fill={filled ? '#2D7A6F' : 'var(--border-color)'}
+                      opacity={filled ? 1 : 0.5}
+                    />
+                  );
+                })}
+                <text x="60" y="55" textAnchor="middle" className="font-display" fontSize="28" fontWeight="700" fill="var(--text-primary)">
+                  {panelHealth.toFixed(0)}
+                </text>
+                <text x="60" y="72" textAnchor="middle" fontSize="10" fontWeight="500" fill="var(--text-tertiary)">
+                  HEALTH %
+                </text>
+              </svg>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-text-tertiary">
+            <span>Alerts: <span className="font-semibold text-text-primary">{criticalCount}</span></span>
+            <span>Uptime: <span className="font-semibold text-text-primary">99.2%</span></span>
+          </div>
+        </motion.div>
+
+        {/* Card 2: Primary Sensor Detail (like Turbine Stability) */}
+        <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
+          <p className="text-[10px] font-bold text-text-primary tracking-wider uppercase text-center mb-3">Temperature Monitor</p>
+          {tempSensor && (
+            <>
+              <div className="flex justify-center mb-3">
+                <div className={`px-3 py-1 rounded-lg text-[10px] font-bold text-white ${
+                  tempSensor.status === 'critical' ? 'bg-danger' : tempSensor.status === 'warning' ? 'bg-warning' : 'bg-primary'
+                }`}>
+                  {tempSensor.status === 'critical' ? 'CRITICAL' : tempSensor.status === 'warning' ? 'WARNING' : 'NORMAL'}: {tempSensor.value.toFixed(1)}°C
+                </div>
+              </div>
+              {/* Mini sparkline chart */}
+              <div className="flex justify-center mb-4">
+                <Sparkline data={tempSensor.history?.slice(-20)} color={tempSensor.status === 'critical' ? '#DC2626' : '#2D7A6F'} width={200} height={50} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-center flex-1">
+                  <p className="text-[10px] text-text-tertiary mb-0.5">Pressure</p>
+                  <p className="text-xs font-bold text-text-primary flex items-center justify-center gap-1">
+                    <Shield size={10} className="text-primary" /> {pressureSensor?.value?.toFixed(0) || '—'} Pa
+                  </p>
+                </div>
+                <div className="w-px h-6 bg-border" />
+                <div className="text-center flex-1">
+                  <p className="text-[10px] text-text-tertiary mb-0.5">Temperature</p>
+                  <p className="text-xs font-bold flex items-center justify-center gap-1" style={{ color: tempSensor.status === 'critical' ? '#DC2626' : '#2D7A6F' }}>
+                    <AlertTriangle size={10} /> {tempSensor.value.toFixed(1)} °C
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </motion.div>
+
+        {/* Card 3: Air Quality / Emissions (like CO₂ Emission Tracking) */}
+        <motion.div className="glass-strong rounded-2xl p-5 relative overflow-hidden" variants={stagger.item}>
+          <p className="text-[10px] font-bold text-text-primary tracking-wider uppercase mb-2">
+            CO₂ & Air Quality
+          </p>
+          {eco2Sensor && aqSensor && (
+            <>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="font-display font-bold text-[36px] text-text-primary tracking-tight leading-none">
+                  {((1 - aqSensor.value / 500) * 100).toFixed(0)}%
+                </span>
+              </div>
+              <p className="text-[11px] text-text-tertiary mb-4">Air Quality Score</p>
+
+              {/* Hexagonal grid pattern */}
+              <div className="flex flex-wrap gap-1 mb-3">
+                {Array.from({ length: 18 }).map((_, i) => {
+                  const quality = i < Math.round(((500 - aqSensor.value) / 500) * 18);
+                  return (
+                    <div key={i} className="w-4 h-4 rounded-sm" style={{
+                      backgroundColor: quality ? '#2D7A6F' : 'var(--border-color)',
+                      opacity: quality ? 0.3 + (i / 18) * 0.7 : 0.3,
+                    }} />
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-[10px] font-mono bg-primary-lighter text-primary px-2 py-0.5 rounded font-semibold">
+                  eCO₂: {eco2Sensor.value.toFixed(0)} ppm
+                </span>
+                <span className="text-[10px] font-mono bg-accent-light text-accent px-2 py-0.5 rounded font-semibold">
+                  IAQ: {aqSensor.value.toFixed(0)}
+                </span>
+              </div>
+              <button className="text-[11px] text-text-secondary font-semibold underline underline-offset-2 hover:text-primary transition-colors">
+                VIEW REPORT
+              </button>
+            </>
+          )}
+        </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -541,7 +505,7 @@ function SensorsPage() {
   const sensors = useSensorStore((s) => s.deviceSensors[s.activeDeviceId] || {});
 
   return (
-    <motion.div className="h-full p-6 overflow-auto" initial="hidden" animate="visible" exit={{ opacity: 0 }} variants={stagger.container}>
+    <motion.div className="h-full p-6 overflow-auto bg-page-bg" initial="hidden" animate="visible" exit={{ opacity: 0 }} variants={stagger.container}>
       <div className="max-w-[1200px] mx-auto">
         <motion.div className="flex items-end justify-between mb-6" variants={stagger.item}>
           <div>
@@ -551,13 +515,30 @@ function SensorsPage() {
         </motion.div>
 
         <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" variants={stagger.item}>
-          <QuickStat sensorId="temperature" icon={Thermometer} color="#2D7A6F" sensors={sensors} />
-          <QuickStat sensorId="humidity" icon={Droplets} color="#0891B2" sensors={sensors} />
-          <QuickStat sensorId="co" icon={Skull} color="#DC2626" sensors={sensors} />
-          <QuickStat sensorId="air-quality" icon={Activity} color="#8B5CF6" sensors={sensors} />
+          {[
+            { id: 'temperature', icon: Thermometer, color: '#2D7A6F' },
+            { id: 'humidity', icon: Droplets, color: '#0891B2' },
+            { id: 'co', icon: Skull, color: '#DC2626' },
+            { id: 'air-quality', icon: Activity, color: '#8B5CF6' },
+          ].map(({ id, icon: Icon, color }) => {
+            const sensor = sensors[id];
+            if (!sensor) return null;
+            return (
+              <motion.div key={id} className="glass rounded-2xl p-4" variants={stagger.item}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: color + '12', color }}><Icon size={15} /></div>
+                  <Sparkline data={sensor.history?.slice(-12)} color={color} width={50} height={20} />
+                </div>
+                <p className="text-[10px] text-text-tertiary mb-0.5">{sensor.label}</p>
+                <p className="font-display font-bold text-lg text-text-primary tracking-tight">
+                  {sensor.value.toFixed(1)}<span className="text-[10px] text-text-tertiary ml-1 font-normal">{sensor.unit}</span>
+                </p>
+              </motion.div>
+            );
+          })}
         </motion.div>
 
-        <motion.div className="bg-card-bg border border-border rounded-[20px] p-5 shadow-sm" variants={stagger.item}>
+        <motion.div className="glass rounded-2xl p-5" variants={stagger.item}>
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-display font-bold text-lg text-text-primary">Complete Sensor Array</h3>
             <span className="text-xs text-text-tertiary">12 active sensors</span>
@@ -571,23 +552,6 @@ function SensorsPage() {
   );
 }
 
-function QuickStat({ sensorId, icon: Icon, color, sensors }) {
-  const sensor = sensors?.[sensorId];
-  if (!sensor) return null;
-  return (
-    <motion.div className="bg-card-bg border border-border rounded-[18px] p-4 shadow-sm hover:shadow-md transition-all" variants={stagger.item}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center" style={{ backgroundColor: color + '12', color }}><Icon size={16} /></div>
-        <Sparkline data={sensor.history.slice(-12)} color={color} width={56} height={22} />
-      </div>
-      <p className="text-[11px] text-text-tertiary mb-0.5">{sensor.label}</p>
-      <p className="font-display font-bold text-xl text-text-primary tracking-tight">
-        {sensor.value.toFixed(1)}<span className="text-[11px] text-text-tertiary ml-1 font-normal">{sensor.unit}</span>
-      </p>
-    </motion.div>
-  );
-}
-
 /* ═══════════════════════ App ═══════════════════════ */
 export default function App() {
   const [isBooting, setIsBooting] = useState(true);
@@ -597,6 +561,7 @@ export default function App() {
   useMQTTSimulator();
 
   const sidebarWidth = sidebarCollapsed ? 72 : 240;
+  const isDashboard = activePage === 'dashboard';
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-page-bg flex transition-colors duration-500">
@@ -606,17 +571,19 @@ export default function App() {
           <Sidebar />
           <Vignette />
           <AlertBanner />
-          <div className="flex-1 flex flex-col h-full transition-all duration-300" style={{ marginLeft: sidebarWidth }}>
-            <TopHeader />
-            <main className="flex-1 overflow-hidden">
-              <AnimatePresence mode="wait">
-                {activePage === 'dashboard' && <DashboardPage key="dashboard" />}
-                {activePage === 'sensors' && <SensorsPage key="sensors" />}
-                {activePage === 'analytics' && <AnalyticsPage key="analytics" />}
-                {activePage === 'alerts' && <AlertsPage key="alerts" />}
-                {activePage === 'settings' && <SettingsPage key="settings" />}
-              </AnimatePresence>
-            </main>
+
+          {/* Main Content */}
+          <div className="flex-1 h-full transition-all duration-300 relative" style={{ marginLeft: sidebarWidth }}>
+            <AnimatePresence mode="wait">
+              {/* Dashboard = FULL 3D + floating HUD (no scroll, no header) */}
+              {isDashboard && <DashboardPage key="dashboard" />}
+
+              {/* Other pages = traditional scrollable layout */}
+              {activePage === 'sensors' && <SensorsPage key="sensors" />}
+              {activePage === 'analytics' && <AnalyticsPage key="analytics" />}
+              {activePage === 'alerts' && <AlertsPage key="alerts" />}
+              {activePage === 'settings' && <SettingsPage key="settings" />}
+            </AnimatePresence>
           </div>
         </>
       )}
