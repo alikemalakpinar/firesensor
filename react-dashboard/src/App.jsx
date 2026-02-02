@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { DigitalTwin } from './components/3d/DigitalTwin';
-import { BottomNavigation, MiniStatusBar } from './components/hud/BottomNavigation';
+import { Sidebar, MiniStatusBar } from './components/hud/Sidebar';
 import { Vignette, AlertBanner } from './components/hud/Vignette';
 import { TachometerGauge, SystemHealthGauge } from './components/hud/TachometerGauge';
 import { SensorChip, SensorChipGrid } from './components/hud/SensorChip';
@@ -593,19 +593,20 @@ export default function App() {
   const [isBooting, setIsBooting] = useState(true);
   const activePage = useSensorStore((s) => s.activePage);
   const theme = useSensorStore((s) => s.theme);
+  const sidebarCollapsed = useSensorStore((s) => s.sidebarCollapsed);
   useMQTTSimulator();
 
-  const isDark = theme === 'dark';
+  const sidebarWidth = sidebarCollapsed ? 72 : 240;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-page-bg flex">
+    <div className="h-screen w-screen overflow-hidden bg-page-bg flex transition-colors duration-500">
       <AnimatePresence>{isBooting && <BootSequence onComplete={() => setIsBooting(false)} />}</AnimatePresence>
       {!isBooting && (
         <>
-          <BottomNavigation />
+          <Sidebar />
           <Vignette />
           <AlertBanner />
-          <div className="flex-1 ml-[72px] flex flex-col h-full">
+          <div className="flex-1 flex flex-col h-full transition-all duration-300" style={{ marginLeft: sidebarWidth }}>
             <TopHeader />
             <main className="flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
